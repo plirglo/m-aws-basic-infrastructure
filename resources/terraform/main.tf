@@ -11,4 +11,5 @@ module "ec2" {
   use_public_ip  = var.use_public_ip
   region         = var.region
   ami            = var.ami
+  key_name       = var.admin_username
   }

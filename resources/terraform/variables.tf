@@ -24,9 +24,11 @@ variable "rsa_pub_path" {
 
 variable "admin_username" {
   type = string
+  default = "ec2-user"
 }
 
 variable "ami" {
   description = "ID of AMI to use for the instance"
   type        = string
+  default     = "ami-02ab606eae7264892"
 }

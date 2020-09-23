@@ -63,7 +63,7 @@ resource "aws_subnet" "awsbi-subnet" {
 	cidr_block        = "10.1.1.0/24"
 	availability_zone = "${var.region}a"
   tags              = {
-    Name = "${var.name}-subnet"
+    Name = "subnet-${var.name}"
   	cluster_name = var.name
   }
 }
@@ -74,7 +74,7 @@ resource "aws_vpc" "awsbi-vpc" {
   enable_dns_support    = "true"
   enable_dns_hostnames  = "true"
   tags                  = {
-    Name          = "${var.name}-vpc"
+    Name          = "vpc-${var.name}"
     cluster_name  = var.name
   }
 }
@@ -82,7 +82,7 @@ resource "aws_vpc" "awsbi-vpc" {
 resource "aws_internet_gateway" "awsbi-internet-gateway" {
   vpc_id  = aws_vpc.awsbi-vpc.id
   tags    = {
-    Name          = "${var.name}-internet-gateway"
+    Name          = "internet-gateway-${var.name}"
     cluster_name  = var.name
   }
 }
@@ -114,10 +114,10 @@ resource "aws_instance" "awsbi" {
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.awsbi-subnet.id
   associate_public_ip_address = var.use_public_ip
+  key_name                    = var.key_name
   security_groups             = [
     aws_security_group.awsbi-security-group.id
   ]
-
   tags = {
     Name = var.name
   }
@@ -130,7 +130,7 @@ resource "aws_route_table" "awsbi-route-table" {
     gateway_id = aws_internet_gateway.awsbi-internet-gateway.id
   }
   tags = {
-        Name = "web-table"
+        Name = "route-${var.name}"
         cluster_name = var.name
   }
 }

@@ -17,8 +17,6 @@ $(M_MODULE_SHORT):
   region: $(M_REGION)
   use_public_ip: $(M_PUBLIC_IPS)
   rsa_pub_path: "$(M_SHARED)/$(M_VMS_RSA).pub"
-  admin_username: $(M_USERNAME)
-  ami: $(M_AMI)
 endef
 
 define M_STATE_INITIAL

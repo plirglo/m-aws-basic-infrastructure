@@ -29,3 +29,8 @@ variable "region" {
   description = "Region to launch in"
   type        = string
 }
+
+variable "key_name" {
+  description = "ssh-key name"
+  type = string
+}
