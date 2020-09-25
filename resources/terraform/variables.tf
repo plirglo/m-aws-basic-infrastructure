@@ -23,7 +23,7 @@ variable "rsa_pub_path" {
 }
 
 variable "admin_username" {
-  type = string
+  type    = string
   default = "ec2-user"
 }
 

@@ -35,11 +35,6 @@ plan-destroy: template-tfvars terraform-plan-destroy
 
 output: terraform-output
 
-#================================================
-#
-# subtargers
-#
-#================================================
 setup: $(M_SHARED)/$(M_MODULE_SHORT)
 	#AWSBI | setup | Ensure required directories exist
 

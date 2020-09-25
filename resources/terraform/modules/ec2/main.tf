@@ -59,9 +59,9 @@ JSON
 }
 
 resource "aws_subnet" "awsbi-subnet" {
-	vpc_id            = aws_vpc.awsbi-vpc.id
-	cidr_block        = "10.1.1.0/24"
-	availability_zone = "${var.region}a"
+  vpc_id            = aws_vpc.awsbi-vpc.id
+  cidr_block        = var.subnet_cidr_block
+  availability_zone = "${var.region}a"
   tags              = {
     Name = "subnet-${var.name}"
   	cluster_name = var.name
@@ -69,7 +69,7 @@ resource "aws_subnet" "awsbi-subnet" {
 }
 
 resource "aws_vpc" "awsbi-vpc" {
-  cidr_block            = "10.1.0.0/20"
+  cidr_block            = var.vpc_cidr_block
   instance_tenancy      = "default"
   enable_dns_support    = "true"
   enable_dns_hostnames  = "true"

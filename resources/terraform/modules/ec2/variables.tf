@@ -34,3 +34,13 @@ variable "key_name" {
   description = "ssh-key name"
   type = string
 }
+
+variable "vpc_cidr_block" {
+  description = "The cidr block of the VPC"
+  default     = "10.1.0.0/20"
+}
+
+variable "subnet_cidr_block" {
+  description = "The cidr block of the subnet"
+  default     = "10.1.1.0/24"
+}

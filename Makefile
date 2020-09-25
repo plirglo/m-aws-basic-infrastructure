@@ -1,4 +1,4 @@
-ROOT_DIR := $(patsubst %/,%,$(dir $(abspath $(firstword $(MAKEFILE_LIST))))) 
+ROOT_DIR := $(patsubst %/,%,$(dir $(abspath $(firstword $(MAKEFILE_LIST)))))
 
 VERSION ?= 0.0.1
 USER := epiphanyplatform
@@ -11,9 +11,9 @@ HOST_GID := $(shell id -g)
 .PHONY: build release metadata
 
 warning:
-	$(error Please specify make target: make (build/release/metadata) )
+	$(error Usage: make (build/release/metadata) )
 
-build: file-guard-Dockerfile guard-VERSION guard-IMAGE guard-USER
+build: guard-VERSION guard-IMAGE guard-USER
 	docker build --rm \
 		--build-arg ARG_M_VERSION=$(VERSION) \
 		--build-arg ARG_HOST_UID=$(HOST_UID) \
@@ -21,7 +21,7 @@ build: file-guard-Dockerfile guard-VERSION guard-IMAGE guard-USER
 		-t $(IMAGE_NAME) \
 		.
 
-release: file-guard-Dockerfile guard-VERSION guard-IMAGE guard-USER
+release: guard-VERSION guard-IMAGE guard-USER
 	docker build \
 		--build-arg ARG_M_VERSION=$(VERSION) \
 		-t $(IMAGE_NAME) \
@@ -33,13 +33,7 @@ guard-%:
 		exit 1; \
 	fi
 
-file-guard-%:
-	@if [ ! -f $* ]; then \
-	 	echo "File '$*' not exists"; \
-		exit 1; \
-	fi
-
-metadata: guard-VERSION guard-IMAGE guard-USER
+metadata: guard-IMAGE
 	docker run --rm \
 		-t $(IMAGE_NAME) \
 		metadata

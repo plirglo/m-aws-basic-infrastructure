@@ -16,19 +16,13 @@ make build
 
 ### Prepare config file
 
-Prepare your own variables to use in the building process.
+Prepare your own variables in vars.mk file to use in the building process.
 Sample file (examples/basic_flow/vars.mk.sample):
 
 ```shell
-AWS_ACCESS_KEY = "xxx"
-AWS_SECRET_KEY = "xxx"
-M_PUBLIC_IPS = true
-M_VMS_COUNT = 1
-M_VMS_RSA_FILENAME = id_rsa
+AWS_ACCESS_KEY_ID = "xxx"
+AWS_ACCESS_KEY_SECRET = "xxx"
 ```
-
-AWS keys are mandatory.
-If no other variables are provided, the building process will use defaults as above.
 
 ### Create an environment
 
@@ -50,7 +44,7 @@ make apply
 
 ```shell
 cd examples/basic_flow
-all-destroy
+make all-destroy
 ```
 
 or step-by-step
