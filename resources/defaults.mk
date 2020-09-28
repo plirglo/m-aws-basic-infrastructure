@@ -1,4 +1,4 @@
-M_VMS_COUNT ?= 3
+M_VMS_COUNT ?= 1
 M_PUBLIC_IPS ?= true
 M_REGION ?= eu-central-1
 M_NAME ?= epiphany

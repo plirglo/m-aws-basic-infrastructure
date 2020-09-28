@@ -5,47 +5,12 @@ resource "aws_resourcegroups_group" "rg" {
     query = <<JSON
 {
   "ResourceTypeFilters": [
-    "AWS::DynamoDB::Table",
-    "AWS::EC2::CustomerGateway",
-    "AWS::EC2::DHCPOptions",
-    "AWS::EC2::EIP",
-    "AWS::EC2::Image",
-    "AWS::EC2::Instance",
-    "AWS::EC2::InternetGateway",
-    "AWS::EC2::NetworkAcl",
-    "AWS::EC2::NetworkInterface",
-    "AWS::EC2::ReservedInstance",
-    "AWS::EC2::RouteTable",
-    "AWS::EC2::SecurityGroup",
-    "AWS::EC2::Snapshot",
-    "AWS::EC2::SpotInstanceRequest",
     "AWS::EC2::Subnet",
     "AWS::EC2::VPC",
-    "AWS::EC2::VPNConnection",
-    "AWS::EC2::VPNGateway",
-    "AWS::EC2::Volume",
-    "AWS::EMR::Cluster",
-    "AWS::ElastiCache::CacheCluster",
-    "AWS::ElastiCache::Snapshot",
-    "AWS::ElasticLoadBalancing::LoadBalancer",
-    "AWS::Glacier::Vault",
-    "AWS::Kinesis::Stream",
-    "AWS::Lambda::Function",
-    "AWS::RDS::DBInstance",
-    "AWS::RDS::DBParameterGroup",
-    "AWS::RDS::DBSecurityGroup",
-    "AWS::RDS::DBSnapshot",
-    "AWS::RDS::DBSubnetGroup",
-    "AWS::RDS::EventSubscription",
-    "AWS::RDS::OptionGroup",
-    "AWS::RDS::ReservedDBInstance",
-    "AWS::Redshift::Cluster",
-    "AWS::Redshift::ClusterParameterGroup",
-    "AWS::Redshift::ClusterSubnetGroup",
-    "AWS::Redshift::HSMClientCertificate",
-    "AWS::ResourceGroups::Group",
-    "AWS::S3::Bucket",
-    "AWS::StorageGateway::Gateway"
+    "AWS::EC2::InternetGateway",
+    "AWS::EC2::SecurityGroup",
+    "AWS::EC2::Instance",
+    "AWS::EC2::RouteTable"
   ],
   "TagFilters": [
     {
@@ -58,8 +23,8 @@ JSON
   }
 }
 
-resource "aws_subnet" "awsbi-subnet" {
-  vpc_id            = aws_vpc.awsbi-vpc.id
+resource "aws_subnet" "awsbi_subnet" {
+  vpc_id            = aws_vpc.awsbi_vpc.id
   cidr_block        = var.subnet_cidr_block
   availability_zone = "${var.region}a"
   tags              = {
@@ -68,7 +33,7 @@ resource "aws_subnet" "awsbi-subnet" {
   }
 }
 
-resource "aws_vpc" "awsbi-vpc" {
+resource "aws_vpc" "awsbi_vpc" {
   cidr_block            = var.vpc_cidr_block
   instance_tenancy      = "default"
   enable_dns_support    = "true"
@@ -79,16 +44,16 @@ resource "aws_vpc" "awsbi-vpc" {
   }
 }
 
-resource "aws_internet_gateway" "awsbi-internet-gateway" {
-  vpc_id  = aws_vpc.awsbi-vpc.id
+resource "aws_internet_gateway" "awsbi_internet_gateway" {
+  vpc_id  = aws_vpc.awsbi_vpc.id
   tags    = {
     Name          = "internet-gateway-${var.name}"
     cluster_name  = var.name
   }
 }
 
-resource "aws_security_group" "awsbi-security-group" {
-  vpc_id  = aws_vpc.awsbi-vpc.id
+resource "aws_security_group" "awsbi_security_group" {
+  vpc_id  = aws_vpc.awsbi_vpc.id
   tags    = {
     Name = "sg-${var.name}"
     cluster_name = var.name
@@ -112,22 +77,23 @@ resource "aws_instance" "awsbi" {
   count                       = var.instance_count
   ami                         = var.ami
   instance_type               = var.instance_type
-  subnet_id                   = aws_subnet.awsbi-subnet.id
+  subnet_id                   = aws_subnet.awsbi_subnet.id
   associate_public_ip_address = var.use_public_ip
   key_name                    = var.key_name
-  security_groups             = [
-    aws_security_group.awsbi-security-group.id
+  vpc_security_group_ids      = [
+    aws_security_group.awsbi_security_group.id
   ]
   tags = {
     Name = var.name
+    cluster_name = var.name
   }
 }
 
-resource "aws_route_table" "awsbi-route-table" {
-  vpc_id  = aws_vpc.awsbi-vpc.id
+resource "aws_route_table" "awsbi_route_table" {
+  vpc_id  = aws_vpc.awsbi_vpc.id
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.awsbi-internet-gateway.id
+    gateway_id = aws_internet_gateway.awsbi_internet_gateway.id
   }
   tags = {
         Name = "route-${var.name}"
@@ -135,7 +101,7 @@ resource "aws_route_table" "awsbi-route-table" {
   }
 }
 
-resource "aws_route_table_association" "awsbi-route-association" {
-  subnet_id      = aws_subnet.awsbi-subnet.id
-  route_table_id = aws_route_table.awsbi-route-table.id
+resource "aws_route_table_association" "awsbi_route_association" {
+  subnet_id      = aws_subnet.awsbi_subnet.id
+  route_table_id = aws_route_table.awsbi_route_table.id
 }
