@@ -29,7 +29,7 @@ resource "aws_subnet" "awsbi_subnet" {
   availability_zone = "${var.region}a"
   tags              = {
     Name = "subnet-${var.name}"
-  	cluster_name = var.name
+    cluster_name = var.name
   }
 }
 
