@@ -12,4 +12,4 @@ module "ec2" {
   region         = var.region
   ami            = var.ami
   key_name       = var.admin_username
-  }
+}
