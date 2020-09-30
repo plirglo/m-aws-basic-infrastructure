@@ -1,0 +1,46 @@
+variable "name" {
+  description = "Name to be used on all resources as prefix"
+  type        = string
+  default     = "awsbi"
+}
+
+variable "ami" {
+  description = "ID of AMI to use for the instance"
+  type        = string
+}
+
+variable "instance_type" {
+  description = "The type of instance to start"
+  type        = string
+  default     = "t3.medium"
+}
+
+variable "instance_count" {
+  description = "Number of instances to launch"
+  type        = number
+}
+
+variable "use_public_ip" {
+  description = "If true, the EC2 instance will have associated public IP address"
+  type        = bool
+}
+
+variable "region" {
+  description = "Region to launch in"
+  type        = string
+}
+
+variable "key_name" {
+  description = "ssh-key name"
+  type = string
+}
+
+variable "vpc_cidr_block" {
+  description = "The cidr block of the VPC"
+  default     = "10.1.0.0/20"
+}
+
+variable "subnet_cidr_block" {
+  description = "The cidr block of the subnet"
+  default     = "10.1.1.0/24"
+}
