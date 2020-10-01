@@ -66,3 +66,12 @@ or if you want to set a different version number:
 ```shell
 make release VERSION=number_of_your_choice
 ```
+
+## Module dependencies
+
+| Component                 | Version | Repo/Website                                          | License                                                           |
+| ------------------------- | ------- | ----------------------------------------------------- | ----------------------------------------------------------------- |
+| Terraform                 | 0.13.2  | https://www.terraform.io/                             | [Mozilla Public License 2.0](https://github.com/hashicorp/terraform/blob/master/LICENSE) |
+| Terraform AWS provider    | 3.7.0   | https://github.com/terraform-providers/terraform-provider-aws | [Mozilla Public License 2.0](https://github.com/terraform-providers/terraform-provider-aws/blob/master/LICENSE) |
+| Make                      | 4.3     | https://www.gnu.org/software/make/                    | [ GNU General Public License](https://www.gnu.org/licenses/gpl-3.0.html) |
+| yq                        | 3.3.4   | https://github.com/mikefarah/yq/                      | [ MIT License](https://github.com/mikefarah/yq/blob/master/LICENSE) |
