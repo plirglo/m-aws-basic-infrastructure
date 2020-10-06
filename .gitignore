@@ -1,0 +1,5 @@
+/.idea/
+/.vscode/
+**/shared/
+**/.terraform/
+**/vars.tfvars.json
