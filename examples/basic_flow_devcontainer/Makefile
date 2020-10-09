@@ -21,7 +21,7 @@ clean:
 	@rm -rf $(ROOT_DIR)/shared
 
 metadata: setup
-	@cd $(M_WORKDIR) && $(MAKE) metadata \
+	@cd $(M_WORKDIR) && $(MAKE) metadata
 
 init: setup
 	@cd $(M_WORKDIR) && $(MAKE) init \
