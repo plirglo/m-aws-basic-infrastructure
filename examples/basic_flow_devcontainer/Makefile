@@ -54,6 +54,6 @@ destroy: setup
 
 setup: $(M_SHARED)/shared/$(M_VMS_RSA_FILENAME)
 
-$(M_SHARED)/shared/$(M_VMS_RSA_FILENAME):
+$(M_SHARED)/$(M_VMS_RSA_FILENAME):
 	@mkdir -p $(dir $@)
 	@ssh-keygen -t rsa -b 4096 -f $@ -N '' 2>&1 >/dev/null
