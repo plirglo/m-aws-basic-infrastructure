@@ -52,7 +52,7 @@ destroy: setup
 		M_AWS_ACCESS_KEY=$(AWS_ACCESS_KEY) \
 		M_AWS_SECRET_KEY=$(AWS_SECRET_KEY)
 
-setup: $(M_SHARED)/shared/$(M_VMS_RSA_FILENAME)
+setup: $(M_SHARED)/$(M_VMS_RSA_FILENAME)
 
 $(M_SHARED)/$(M_VMS_RSA_FILENAME):
 	@mkdir -p $(dir $@)
