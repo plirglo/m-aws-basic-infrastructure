@@ -1,4 +1,7 @@
-*.swp
-*.swo
 /.idea/
 /.vscode/
+**/shared/
+**/.terraform/
+**/vars.tfvars.json
+*.swp
+*.swo
