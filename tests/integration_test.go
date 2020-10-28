@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -40,184 +41,180 @@ var (
 
 func TestMain(m *testing.M) {
 
-	//cleanupAWSResources()
-	//cleanup()
-	//setup()
+	cleanupAWSResources()
+	cleanup()
+	setup()
 	log.Println("Run tests")
 	exitVal := m.Run()
-	//cleanup()
+	cleanup()
 	cleanupAWSResources()
 	log.Println("Finish test")
 	os.Exit(exitVal)
 }
 
-// func TestInitShouldCreateProperFileAndFolder(t *testing.T) {
-// 	// given
-// 	stateFilePath := "shared/state.yml"
-// 	expectedFileContentRegexp := "kind: state\nawsbi:\n  status: initialized"
+func TestInitShouldCreateProperFileAndFolder(t *testing.T) {
+	// given
+	stateFilePath := "shared/state.yml"
+	expectedFileContentRegexp := "kind: state\nawsbi:\n  status: initialized"
 
-// 	// when
-// 	runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "init", "M_NAME="+moduleName)
+	// when
+	runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "init", "M_NAME="+moduleName)
 
-// 	data, err := ioutil.ReadFile(stateFilePath)
+	data, err := ioutil.ReadFile(stateFilePath)
 
-// 	if err != nil {
-// 		t.Fatal("Cannot read state file: ", stateFilePath)
-// 	}
+	if err != nil {
+		t.Fatal("Cannot read state file: ", stateFilePath)
+	}
 
-// 	fileContent := string(data)
+	fileContent := string(data)
 
-// 	matched, _ := regexp.MatchString(expectedFileContentRegexp, fileContent)
+	matched, _ := regexp.MatchString(expectedFileContentRegexp, fileContent)
 
-// 	// then
-// 	if !matched {
-// 		t.Error("Expected to find expression matching:\n", expectedFileContentRegexp, "\nbut found:\n", fileContent)
-// 	}
+	// then
+	if !matched {
+		t.Error("Expected to find expression matching:\n", expectedFileContentRegexp, "\nbut found:\n", fileContent)
+	}
 
-// }
+}
 
-// func TestOnPlanWithDefaultsShouldDisplayPlan(t *testing.T) {
-// 	// given
-// 	var stdout, stderr bytes.Buffer
+func TestOnPlanWithDefaultsShouldDisplayPlan(t *testing.T) {
+	// given
+	var stdout, stderr bytes.Buffer
 
-// 	expectedOutputRegexp := ".*Plan: 14 to add, 0 to change, 0 to destroy.*"
+	expectedOutputRegexp := ".*Plan: 14 to add, 0 to change, 0 to destroy.*"
 
-// 	// when
-// 	stdout, stderr = runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "plan", awsAccessKey, awsSecretKey)
+	// when
+	stdout, stderr = runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "plan", awsAccessKey, awsSecretKey)
 
-// 	if stderr.Len() > 0 {
-// 		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
-// 	}
+	if stderr.Len() > 0 {
+		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
+	}
 
-// 	outStr := string(stdout.Bytes())
+	outStr := string(stdout.Bytes())
 
-// 	matched, _ := regexp.MatchString(expectedOutputRegexp, outStr)
+	matched, _ := regexp.MatchString(expectedOutputRegexp, outStr)
 
-// 	// then
-// 	if !matched {
-// 		t.Error("Expected to find expression matching:\n", expectedOutputRegexp, "\nbut found:\n", outStr)
-// 	}
+	// then
+	if !matched {
+		t.Error("Expected to find expression matching:\n", expectedOutputRegexp, "\nbut found:\n", outStr)
+	}
 
-// }
+}
 
-// func TestOnApplyShouldCreateEnvironment(t *testing.T) {
-// 	// given
-// 	var stdout, stderr bytes.Buffer
-// 	expectedOutputRegexp := ".*Apply complete! Resources: 14 added, 0 changed, 0 destroyed.*"
+func TestOnApplyShouldCreateEnvironment(t *testing.T) {
+	// given
+	var stdout, stderr bytes.Buffer
+	expectedOutputRegexp := ".*Apply complete! Resources: 14 added, 0 changed, 0 destroyed.*"
 
-// 	// when
-// 	stdout, stderr = runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "apply", awsAccessKey, awsSecretKey)
+	// when
+	stdout, stderr = runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "apply", awsAccessKey, awsSecretKey)
 
-// 	if stderr.Len() > 0 {
-// 		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
-// 	}
+	if stderr.Len() > 0 {
+		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
+	}
 
-// 	outStr := string(stdout.Bytes())
+	outStr := string(stdout.Bytes())
 
-// 	matched, _ := regexp.MatchString(expectedOutputRegexp, outStr)
+	matched, _ := regexp.MatchString(expectedOutputRegexp, outStr)
 
-// 	// then
-// 	if !matched {
-// 		t.Error("Expected to find expression matching:\n", expectedOutputRegexp, "\nbut found:\n", outStr)
-// 	}
+	// then
+	if !matched {
+		t.Error("Expected to find expression matching:\n", expectedOutputRegexp, "\nbut found:\n", outStr)
+	}
 
-// }
+}
 
-// func TestShouldCheckNumberOfVms(t *testing.T) {
-// 	// given
-// 	instancesNumber := 1
+func TestShouldCheckNumberOfVms(t *testing.T) {
+	// given
+	instancesNumber := 1
 
-// 	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
-// 	if err != nil {
-// 		t.Fatal("Cannot get session.")
-// 	}
+	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
+	if err != nil {
+		t.Fatal("Cannot get session.")
+	}
 
-// 	// when
+	// when
 
-// 	// ec2
-// 	ec2Client := ec2.New(newSession)
+	// ec2
+	ec2Client := ec2.New(newSession)
 
-// 	filterParams := &ec2.DescribeInstancesInput{
-// 		Filters: []*ec2.Filter{
-// 			{
-// 				Name: aws.String("tag:Name"),
-// 				Values: []*string{
-// 					aws.String(awsTag),
-// 				},
-// 			},
-// 		},
-// 	}
+	filterParams := &ec2.DescribeInstancesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: aws.String("tag:Name"),
+				Values: []*string{
+					aws.String(awsTag),
+				},
+			},
+		},
+	}
 
-// 	ec2Result, err := ec2Client.DescribeInstances(filterParams)
+	ec2Result, err := ec2Client.DescribeInstances(filterParams)
 
-// 	// rg
-// 	rgClient := resourcegroups.New(newSession)
+	// rg
+	// rgClient := resourcegroups.New(newSession)
 
-// 	rgName := "rg-" + moduleName
+	// rgName := "rg-" + moduleName
 
-// 	rgResourcesList, err := rgClient.ListGroupResources(&resourcegroups.ListGroupResourcesInput{
-// 		GroupName: aws.String(rgName),
-// 	})
+	// rgResourcesList, err := rgClient.ListGroupResources(&resourcegroups.ListGroupResourcesInput{
+	// 	GroupName: aws.String(rgName),
+	// })
 
-// 	log.Println(rgResourcesList)
+	// then
+	if err != nil {
+		t.Fatal("There was an error. ", err)
+	}
 
-// 	// then
-// 	if err != nil {
-// 		t.Fatal("There was an error. ", err)
-// 	}
+	if len(ec2Result.Reservations[0].Instances) != 1 {
+		t.Error("Expected ", instancesNumber, "instance, got ", len(ec2Result.Reservations[0].Instances))
+	}
 
-// 	if len(ec2Result.Reservations[0].Instances) != 1 {
-// 		t.Error("Expected ", instancesNumber, "instance, got ", len(ec2Result.Reservations[0].Instances))
-// 	}
+}
 
-// }
+func TestOnDestroyPlanShouldDisplayDestroyPlan(t *testing.T) {
+	// given
+	var stdout, stderr bytes.Buffer
+	expectedOutputRegexp := "Plan: 0 to add, 0 to change, 14 to destroy"
 
-// func TestOnDestroyPlanShouldDisplayDestroyPlan(t *testing.T) {
-// 	// given
-// 	var stdout, stderr bytes.Buffer
-// 	expectedOutputRegexp := "Plan: 0 to add, 0 to change, 14 to destroy"
+	// when
+	stdout, stderr = runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "plan-destroy", awsAccessKey, awsSecretKey)
 
-// 	// when
-// 	stdout, stderr = runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "plan-destroy", awsAccessKey, awsSecretKey)
+	if stderr.Len() > 0 {
+		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
+	}
 
-// 	if stderr.Len() > 0 {
-// 		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
-// 	}
+	outStr := string(stdout.Bytes())
 
-// 	outStr := string(stdout.Bytes())
+	matched, _ := regexp.MatchString(expectedOutputRegexp, outStr)
 
-// 	matched, _ := regexp.MatchString(expectedOutputRegexp, outStr)
+	// then
+	if !matched {
+		t.Error("Expected to find expression matching:\n", expectedOutputRegexp, "\nbut found:\n", outStr)
+	}
+}
 
-// 	// then
-// 	if !matched {
-// 		t.Error("Expected to find expression matching:\n", expectedOutputRegexp, "\nbut found:\n", outStr)
-// 	}
-// }
+func TestOnDestroyShouldDestroyEnvironment(t *testing.T) {
+	// given
+	var stdout, stderr bytes.Buffer
 
-// func TestOnDestroyShouldDestroyEnvironment(t *testing.T) {
-// 	// given
-// 	var stdout, stderr bytes.Buffer
+	expectedOutputRegexp := "Apply complete! Resources: 0 added, 0 changed, 14 destroyed."
 
-// 	expectedOutputRegexp := "Apply complete! Resources: 0 added, 0 changed, 14 destroyed."
+	// when
+	stdout, stderr = runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "destroy", awsAccessKey, awsSecretKey)
 
-// 	// when
-// 	stdout, stderr = runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "destroy", awsAccessKey, awsSecretKey)
+	if stderr.Len() > 0 {
+		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
+	}
 
-// 	if stderr.Len() > 0 {
-// 		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
-// 	}
+	outStr := string(stdout.Bytes())
 
-// 	outStr := string(stdout.Bytes())
+	matched, _ := regexp.MatchString(expectedOutputRegexp, outStr)
 
-// 	//log.Println(outStr)
-
-// 	matched, _ := regexp.MatchString(expectedOutputRegexp, outStr)
-
-// 	// then
-// 	if !matched {
-// 		t.Error("Expected to find expression matching:\n", expectedOutputRegexp, "\nbut found:\n", outStr)
-// 	}
-// }
+	// then
+	if !matched {
+		t.Error("Expected to find expression matching:\n", expectedOutputRegexp, "\nbut found:\n", outStr)
+	}
+}
 
 func setup() {
 	awsAccessKey = os.Getenv("AWS_ACCESS_KEY_ID")
@@ -264,12 +261,7 @@ func cleanupAWSResources() {
 	rgClient := resourcegroups.New(session)
 
 	rgName := "rg-" + moduleName
-
-	// rgResult, err := rgClient.GetGroup(&resourcegroups.GetGroupInput{
-	// 	GroupName: aws.String(rgName),
-	// })
-
-	// log.Println("rg ", rgResult.Group)
+	kpName := "kp-" + moduleName
 
 	rgResourcesList, err := rgClient.ListGroupResources(&resourcegroups.ListGroupResourcesInput{
 		GroupName: aws.String(rgName),
@@ -277,7 +269,7 @@ func cleanupAWSResources() {
 
 	log.Println(rgResourcesList)
 
-	resourcesTypesToRemove := []string{"Instance", "SecurityGroup", "NatGateway", "Subnet", "RouteTable", "InternetGateway", "VPC"}
+	resourcesTypesToRemove := []string{"Instance", "SecurityGroup", "Subnet", "RouteTable", "InternetGateway", "VPC", "NatGateway"}
 
 	for _, resourcesTypeToRemove := range resourcesTypesToRemove {
 
@@ -303,19 +295,35 @@ func cleanupAWSResources() {
 			log.Println("InternetGateway.")
 			removeInternetGateway(filtered)
 		case "SecurityGroup":
+			log.Println("SecurityGroup.")
 			removeSecurityGroup(filtered)
 		case "NatGateway":
+			log.Println("NatGateway.")
 			removeNatGateway(filtered)
 		case "Subnet":
+			log.Println("Subnet.")
 			removeSubnet(filtered)
 		case "VPC":
+			log.Println("VPC.")
 			removeVpc(filtered)
 		default:
-			log.Println("Too far away.")
+			log.Println("Wawaweewa.")
 		}
 	}
 
-	// TODO: Remove resource group
+	log.Println("Removing resource group: ", rgName)
+	rgDelInp := resourcegroups.DeleteGroupInput{
+		GroupName: aws.String(rgName),
+	}
+	rgDelOut, rgDelErr := rgClient.DeleteGroup(&rgDelInp)
+	log.Println("Output: ", rgDelOut)
+	log.Println("Error: ", rgDelErr)
+
+	log.Println("Removing key pair: ", kpName)
+	removeKeyPair(kpName)
+
+	// TODO: Add release EIP
+	// https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/ec2-example-elastic-ip-addresses.html
 }
 
 func runCommand(commandWithParams ...string) (bytes.Buffer, bytes.Buffer) {
@@ -362,25 +370,23 @@ func removeEc2s(ec2sToRemove []*resourcegroups.ResourceIdentifier) {
 
 	ec2Client := ec2.New(newSession)
 
-	ec2ids := make([]*string, 0)
+	ec2ToRemoveIDs := make([]*string, 0)
 
 	log.Println("Removing...")
 
 	for _, ec2ToRemove := range ec2sToRemove {
-		ec2IdToRemove := strings.Split(*ec2ToRemove.ResourceArn, "/")[1]
-		log.Println(": ", ec2IdToRemove)
+		ec2ToRemoveID := strings.Split(*ec2ToRemove.ResourceArn, "/")[1]
+		log.Println(": ", ec2ToRemoveID)
 
-		ec2ids = append(ec2ids, &ec2IdToRemove)
+		ec2ToRemoveIDs = append(ec2ToRemoveIDs, &ec2ToRemoveID)
 	}
 
-	log.Println()
-
-	if len(ec2ids) > 0 {
-		terminateInstances := &ec2.TerminateInstancesInput{
-			InstanceIds: ec2ids,
+	if len(ec2ToRemoveIDs) > 0 {
+		instancesToTerminateInp := &ec2.TerminateInstancesInput{
+			InstanceIds: ec2ToRemoveIDs,
 		}
 
-		output, err := ec2Client.TerminateInstances(terminateInstances)
+		output, err := ec2Client.TerminateInstances(instancesToTerminateInp)
 		log.Println("Output: ", output)
 		log.Println("Error: ", err)
 	} else {
@@ -389,7 +395,7 @@ func removeEc2s(ec2sToRemove []*resourcegroups.ResourceIdentifier) {
 
 }
 
-func removeRouteTables(routeTablesToRemove []*resourcegroups.ResourceIdentifier) {
+func removeRouteTables(rtsToRemove []*resourcegroups.ResourceIdentifier) {
 	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
 	if err != nil {
 		log.Fatal("Cannot get session.")
@@ -399,7 +405,7 @@ func removeRouteTables(routeTablesToRemove []*resourcegroups.ResourceIdentifier)
 
 	log.Println("Removing...")
 
-	for _, rtToRemove := range routeTablesToRemove {
+	for _, rtToRemove := range rtsToRemove {
 		rtIDToRemove := strings.Split(*rtToRemove.ResourceArn, "/")[1]
 		log.Println("rtIDToRemove: ", rtIDToRemove)
 
@@ -544,12 +550,31 @@ func removeVpc(vpcsToRemove []*resourcegroups.ResourceIdentifier) {
 		vpcIDToRemove := strings.Split(*vpcToRemove.ResourceArn, "/")[1]
 		log.Println("vpcIdToRemove: ", vpcIDToRemove)
 
-		vpcID := &ec2.DeleteVpcInput{
+		vpcToDeleteInp := &ec2.DeleteVpcInput{
 			VpcId: &vpcIDToRemove,
 		}
 
-		output, err := ec2Client.DeleteVpc(vpcID)
+		output, err := ec2Client.DeleteVpc(vpcToDeleteInp)
 		log.Println("Output: ", output)
 		log.Println("Error: ", err)
 	}
+}
+
+func removeKeyPair(kpName string) {
+	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
+	if err != nil {
+		log.Fatal("Cannot get session.")
+	}
+
+	ec2Client := ec2.New(newSession)
+
+	log.Println("Removing...")
+
+	removeKeyInp := &ec2.DeleteKeyPairInput{
+		KeyName: &kpName,
+	}
+
+	output, err := ec2Client.DeleteKeyPair(removeKeyInp)
+	log.Println("Output: ", output)
+	log.Println("Error: ", err)
 }
