@@ -277,7 +277,7 @@ func cleanupAWSResources() {
 
 	log.Println(rgResourcesList)
 
-	resourcesTypesToRemove := []string{"Instance", "SecurityGroup", "NatGateway", "Subnet", "RouteTable", "VPC", "InternetGateway"}
+	resourcesTypesToRemove := []string{"Instance", "SecurityGroup", "NatGateway", "Subnet", "RouteTable", "InternetGateway", "VPC"}
 
 	for _, resourcesTypeToRemove := range resourcesTypesToRemove {
 
@@ -315,11 +315,7 @@ func cleanupAWSResources() {
 		}
 	}
 
-	// then
-	// if err != nil {
-	// 	log.Fatal("There was an error. ", err)
-	// }
-
+	// TODO: Remove resource group
 }
 
 func runCommand(commandWithParams ...string) (bytes.Buffer, bytes.Buffer) {
@@ -455,13 +451,32 @@ func removeInternetGateway(igsToRemove []*resourcegroups.ResourceIdentifier) {
 		igIDToRemove := strings.Split(*igToRemove.ResourceArn, "/")[1]
 		log.Println("igIdToRemove: ", igIDToRemove)
 
-		igID := &ec2.DeleteInternetGatewayInput{
+		igDescribeInp := &ec2.DescribeInternetGatewaysInput{
+			InternetGatewayIds: []*string{&igIDToRemove},
+		}
+
+		descOut, descErr := ec2Client.DescribeInternetGateways(igDescribeInp)
+		vpcID := *descOut.InternetGateways[0].Attachments[0].VpcId
+		log.Println("Output: ", descOut)
+		log.Println("Error: ", descErr)
+
+		igDetachInp := &ec2.DetachInternetGatewayInput{
+			InternetGatewayId: &igIDToRemove,
+			VpcId:             &vpcID,
+		}
+
+		detachOut, detachErr := ec2Client.DetachInternetGateway(igDetachInp)
+		log.Println("Output: ", detachOut)
+		log.Println("Error: ", detachErr)
+
+		igDeleteInp := &ec2.DeleteInternetGatewayInput{
 			InternetGatewayId: &igIDToRemove,
 		}
 
-		output, err := ec2Client.DeleteInternetGateway(igID)
-		log.Println("Output: ", output)
-		log.Println("Error: ", err)
+		delOut, delErr := ec2Client.DeleteInternetGateway(igDeleteInp)
+		log.Println("Output: ", delOut)
+		log.Println("Error: ", delErr)
+
 	}
 }
 
