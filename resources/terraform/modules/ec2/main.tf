@@ -93,6 +93,11 @@ resource "aws_eip" "awsbi_nat_gateway" {
   count = local.use_nat_gateway ? 1 : 0
 
   vpc = true
+
+  tags = {
+    Name         = "eip-${var.name}"
+    cluster_name = var.name
+  }
 }
 
 resource "aws_nat_gateway" "awsbi_nat_gateway" {
