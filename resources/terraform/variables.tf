@@ -33,13 +33,7 @@ variable "rsa_pub_path" {
   type = string
 }
 
-variable "admin_username" {
-  type    = string
-  default = "ec2-user"
-}
-
-variable "ami" {
-  description = "ID of AMI to use for the instance"
-  type        = string
-  default     = "ami-02ab606eae7264892"
+variable "os" {
+  description = "Operating System to launch"
+  type = string
 }
