@@ -15,7 +15,6 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-	"time"
 
 	"golang.org/x/crypto/ssh"
 
@@ -41,15 +40,15 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	// cleanupAWSResources()
-	// cleanup()
-	// setup()
-	// log.Println("Run tests")
-	// exitVal := m.Run()
-	// cleanup()
 	cleanupAWSResources()
-	// log.Println("Finish test")
-	// os.Exit(exitVal)
+	cleanup()
+	setup()
+	log.Println("Run tests")
+	exitVal := m.Run()
+	log.Println("Finish test")
+	cleanup()
+	cleanupAWSResources()
+	os.Exit(exitVal)
 }
 
 func TestInitShouldCreateProperFileAndFolder(t *testing.T) {
@@ -269,7 +268,7 @@ func cleanupAWSResources() {
 
 	log.Println(rgResourcesList)
 
-	resourcesTypesToRemove := []string{"Instance", "SecurityGroup", "Subnet", "RouteTable", "InternetGateway", "NatGateway", "VPC"}
+	resourcesTypesToRemove := []string{"Instance", "SecurityGroup", "RouteTable", "Subnet", "EIP", "InternetGateway", "NatGateway", "VPC"}
 
 	for _, resourcesTypeToRemove := range resourcesTypesToRemove {
 
@@ -282,12 +281,11 @@ func cleanupAWSResources() {
 
 		}
 
-		log.Println("Filtered", filtered)
-
 		switch resourcesTypeToRemove {
 		case "Instance":
 			log.Println("Instance.")
 			removeEc2s(filtered)
+		case "EIP":
 			log.Println("Releasing public EIPs.")
 			releaseAddresses(eipName)
 		case "RouteTable":
@@ -307,7 +305,6 @@ func cleanupAWSResources() {
 			removeSubnet(filtered)
 		case "VPC":
 			log.Println("VPC.")
-			time.Sleep(20 * time.Second)
 			removeVpc(filtered)
 		default:
 			log.Println("Wawaweewa.")
@@ -470,8 +467,8 @@ func removeInternetGateway(igsToRemove []*resourcegroups.ResourceIdentifier) {
 
 		descOut, descErr := ec2Client.DescribeInternetGateways(igDescribeInp)
 		vpcID := *descOut.InternetGateways[0].Attachments[0].VpcId
-		log.Println("Output: ", descOut)
-		log.Println("Error: ", descErr)
+		log.Println("Describe-IG-Output: ", descOut)
+		log.Println("Describe-IG-Error: ", descErr)
 
 		igDetachInp := &ec2.DetachInternetGatewayInput{
 			InternetGatewayId: &igIDToRemove,
@@ -479,16 +476,16 @@ func removeInternetGateway(igsToRemove []*resourcegroups.ResourceIdentifier) {
 		}
 
 		detachOut, detachErr := ec2Client.DetachInternetGateway(igDetachInp)
-		log.Println("Output: ", detachOut)
-		log.Println("Error: ", detachErr)
+		log.Println("Detach-IG-Output: ", detachOut)
+		log.Println("Detach-IG-Error: ", detachErr)
 
 		igDeleteInp := &ec2.DeleteInternetGatewayInput{
 			InternetGatewayId: &igIDToRemove,
 		}
 
 		delOut, delErr := ec2Client.DeleteInternetGateway(igDeleteInp)
-		log.Println("Output: ", delOut)
-		log.Println("Error: ", delErr)
+		log.Println("Delete-IG-Output: ", delOut)
+		log.Println("Delete-IG-Error: ", delErr)
 
 	}
 }
