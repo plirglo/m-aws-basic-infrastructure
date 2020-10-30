@@ -5,3 +5,4 @@
 **/vars.tfvars.json
 *.swp
 *.swo
+*.log
