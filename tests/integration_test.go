@@ -15,6 +15,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 
@@ -40,15 +41,15 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	// cleanupAWSResources()
+	// cleanup()
+	// setup()
+	// log.Println("Run tests")
+	// exitVal := m.Run()
+	// cleanup()
 	cleanupAWSResources()
-	cleanup()
-	setup()
-	log.Println("Run tests")
-	exitVal := m.Run()
-	cleanup()
-	cleanupAWSResources()
-	log.Println("Finish test")
-	os.Exit(exitVal)
+	// log.Println("Finish test")
+	// os.Exit(exitVal)
 }
 
 func TestInitShouldCreateProperFileAndFolder(t *testing.T) {
@@ -137,7 +138,7 @@ func TestShouldCheckNumberOfVms(t *testing.T) {
 	// ec2
 	ec2Client := ec2.New(newSession)
 
-	filterParams := &ec2.DescribeInstancesInput{
+	ec2DescInp := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
 			{
 				Name: aws.String("tag:Name"),
@@ -148,7 +149,7 @@ func TestShouldCheckNumberOfVms(t *testing.T) {
 		},
 	}
 
-	ec2Result, err := ec2Client.DescribeInstances(filterParams)
+	ec2Result, err := ec2Client.DescribeInstances(ec2DescInp)
 
 	// rg
 	// rgClient := resourcegroups.New(newSession)
@@ -268,7 +269,7 @@ func cleanupAWSResources() {
 
 	log.Println(rgResourcesList)
 
-	resourcesTypesToRemove := []string{"Instance", "SecurityGroup", "Subnet", "RouteTable", "InternetGateway", "VPC", "NatGateway"}
+	resourcesTypesToRemove := []string{"Instance", "SecurityGroup", "Subnet", "RouteTable", "InternetGateway", "NatGateway", "VPC"}
 
 	for _, resourcesTypeToRemove := range resourcesTypesToRemove {
 
@@ -287,6 +288,8 @@ func cleanupAWSResources() {
 		case "Instance":
 			log.Println("Instance.")
 			removeEc2s(filtered)
+			log.Println("Releasing public EIPs.")
+			releaseAddresses(eipName)
 		case "RouteTable":
 			log.Println("RouteTable.")
 			removeRouteTables(filtered)
@@ -304,6 +307,7 @@ func cleanupAWSResources() {
 			removeSubnet(filtered)
 		case "VPC":
 			log.Println("VPC.")
+			time.Sleep(20 * time.Second)
 			removeVpc(filtered)
 		default:
 			log.Println("Wawaweewa.")
@@ -320,8 +324,6 @@ func cleanupAWSResources() {
 
 	log.Println("Removing key pair: ", kpName)
 	removeKeyPair(kpName)
-
-	releaseAddresses(eipName)
 
 }
 
@@ -369,27 +371,33 @@ func removeEc2s(ec2sToRemove []*resourcegroups.ResourceIdentifier) {
 
 	ec2Client := ec2.New(newSession)
 
-	ec2ToRemoveIDs := make([]*string, 0)
-
 	log.Println("Removing...")
 
 	for _, ec2ToRemove := range ec2sToRemove {
+
 		ec2ToRemoveID := strings.Split(*ec2ToRemove.ResourceArn, "/")[1]
-		log.Println(": ", ec2ToRemoveID)
+		log.Println("Removing instance with ID: ", ec2ToRemoveID)
 
-		ec2ToRemoveIDs = append(ec2ToRemoveIDs, &ec2ToRemoveID)
-	}
-
-	if len(ec2ToRemoveIDs) > 0 {
-		instancesToTerminateInp := &ec2.TerminateInstancesInput{
-			InstanceIds: ec2ToRemoveIDs,
+		ec2DescInp := &ec2.DescribeInstancesInput{
+			InstanceIds: []*string{&ec2ToRemoveID},
 		}
 
-		output, err := ec2Client.TerminateInstances(instancesToTerminateInp)
-		log.Println("Output: ", output)
-		log.Println("Error: ", err)
-	} else {
-		log.Println("No instances to remove.")
+		outDesc, errDesc := ec2Client.DescribeInstances(ec2DescInp)
+		log.Printf("Desc-Output: %s,\nDesc-Error: %s", outDesc, errDesc)
+
+		if outDesc.Reservations != nil {
+
+			instancesToTerminateInp := &ec2.TerminateInstancesInput{
+				InstanceIds: []*string{&ec2ToRemoveID},
+			}
+
+			output, err := ec2Client.TerminateInstances(instancesToTerminateInp)
+			log.Printf("Terminate-Output: %s,\nTerminate-Error: %s", output, err)
+
+			errWait := ec2Client.WaitUntilInstanceTerminated(ec2DescInp)
+			log.Printf("Error: %s", errWait)
+		}
+
 	}
 
 }
@@ -597,9 +605,7 @@ func releaseAddresses(eipName string) {
 
 		tagPresent := false
 		if eip.Tags != nil {
-			log.Printf("Address: %s, \ntags: %s", eip, eip.Tags)
 			tagPresent = checkIfTagPresent(eipName, eip.Tags)
-			log.Printf("Tag present: %t", tagPresent)
 			if tagPresent {
 				log.Printf("Remove EIP with AllocationId: %s", *eip.AllocationId)
 
