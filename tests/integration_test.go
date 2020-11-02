@@ -19,6 +19,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/resourcegroups"
@@ -41,14 +42,14 @@ var (
 
 func TestMain(m *testing.M) {
 	cleanupAWSResources()
-	cleanup()
-	setup()
-	log.Println("Run tests")
-	exitVal := m.Run()
-	log.Println("Finish test")
-	cleanup()
-	cleanupAWSResources()
-	os.Exit(exitVal)
+	// cleanup()
+	// setup()
+	// log.Println("Run tests")
+	// exitVal := m.Run()
+	// log.Println("Finish test")
+	// cleanup()
+	// cleanupAWSResources()
+	// os.Exit(exitVal)
 }
 
 func TestInitShouldCreateProperFileAndFolder(t *testing.T) {
@@ -268,7 +269,7 @@ func cleanupAWSResources() {
 
 	log.Println(rgResourcesList)
 
-	resourcesTypesToRemove := []string{"Instance", "SecurityGroup", "RouteTable", "Subnet", "EIP", "InternetGateway", "NatGateway", "VPC"}
+	resourcesTypesToRemove := []string{"Instance", "SecurityGroup", "NatGateway", "EIP", "InternetGateway", "Subnet", "RouteTable", "VPC"}
 
 	for _, resourcesTypeToRemove := range resourcesTypesToRemove {
 
@@ -311,15 +312,8 @@ func cleanupAWSResources() {
 		}
 	}
 
-	log.Println("Removing resource group: ", rgName)
-	rgDelInp := resourcegroups.DeleteGroupInput{
-		GroupName: aws.String(rgName),
-	}
-	rgDelOut, rgDelErr := rgClient.DeleteGroup(&rgDelInp)
-	log.Println("Output: ", rgDelOut)
-	log.Println("Error: ", rgDelErr)
+	removeResourceGroup(rgName)
 
-	log.Println("Removing key pair: ", kpName)
 	removeKeyPair(kpName)
 
 }
@@ -363,24 +357,25 @@ func generateRsaKeyPair(directory, name string) error {
 func removeEc2s(ec2sToRemove []*resourcegroups.ResourceIdentifier) {
 	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
 	if err != nil {
-		log.Fatal("Cannot get session.")
+		log.Fatal("EC2: Cannot get session.")
 	}
 
 	ec2Client := ec2.New(newSession)
 
-	log.Println("Removing...")
-
 	for _, ec2ToRemove := range ec2sToRemove {
 
 		ec2ToRemoveID := strings.Split(*ec2ToRemove.ResourceArn, "/")[1]
-		log.Println("Removing instance with ID: ", ec2ToRemoveID)
+		log.Println("EC2: Removing instance with ID: ", ec2ToRemoveID)
 
 		ec2DescInp := &ec2.DescribeInstancesInput{
 			InstanceIds: []*string{&ec2ToRemoveID},
 		}
 
 		outDesc, errDesc := ec2Client.DescribeInstances(ec2DescInp)
-		log.Printf("Desc-Output: %s,\nDesc-Error: %s", outDesc, errDesc)
+		if errDesc != nil {
+			log.Fatalf("EC2: Describe error: %s", errDesc)
+		}
+		log.Printf("EC2: Describe output: %s", outDesc)
 
 		if outDesc.Reservations != nil {
 
@@ -388,11 +383,16 @@ func removeEc2s(ec2sToRemove []*resourcegroups.ResourceIdentifier) {
 				InstanceIds: []*string{&ec2ToRemoveID},
 			}
 
-			output, err := ec2Client.TerminateInstances(instancesToTerminateInp)
-			log.Printf("Terminate-Output: %s,\nTerminate-Error: %s", output, err)
+			outputTerm, errTerm := ec2Client.TerminateInstances(instancesToTerminateInp)
+			if errTerm != nil {
+				log.Fatalf("EC2: Terminate error: %s", outputTerm)
+			}
+			log.Printf("EC2: Terminate output: %s", outputTerm)
 
 			errWait := ec2Client.WaitUntilInstanceTerminated(ec2DescInp)
-			log.Printf("Error: %s", errWait)
+			if errWait != nil {
+				log.Fatalf("EC2: Waiting for termination error: %s", errWait)
+			}
 		}
 
 	}
@@ -402,24 +402,26 @@ func removeEc2s(ec2sToRemove []*resourcegroups.ResourceIdentifier) {
 func removeRouteTables(rtsToRemove []*resourcegroups.ResourceIdentifier) {
 	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
 	if err != nil {
-		log.Fatal("Cannot get session.")
+		log.Fatal("RouteTable: Cannot get session.")
 	}
 
 	ec2Client := ec2.New(newSession)
 
-	log.Println("Removing...")
-
 	for _, rtToRemove := range rtsToRemove {
 		rtIDToRemove := strings.Split(*rtToRemove.ResourceArn, "/")[1]
-		log.Println("rtIDToRemove: ", rtIDToRemove)
+		log.Println("RouteTable: rtIDToRemove: ", rtIDToRemove)
 
 		rtToDeleteInp := &ec2.DeleteRouteTableInput{
 			RouteTableId: &rtIDToRemove,
 		}
 
 		output, err := ec2Client.DeleteRouteTable(rtToDeleteInp)
-		log.Println("Output: ", output)
-		log.Println("Error: ", err)
+
+		if err != nil {
+			log.Fatal("RouteTable: Deleting route table error: ", err)
+		}
+
+		log.Println("RouteTable: Deleting route table: ", output)
 	}
 
 }
@@ -427,22 +429,23 @@ func removeRouteTables(rtsToRemove []*resourcegroups.ResourceIdentifier) {
 func removeSecurityGroup(sgsToRemove []*resourcegroups.ResourceIdentifier) {
 	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
 	if err != nil {
-		log.Fatal("Cannot get session.")
+		log.Fatal("Security Group: Cannot get session.")
 	}
 
 	ec2Client := ec2.New(newSession)
 
-	log.Println("Removing...")
-
 	for _, sgToRemove := range sgsToRemove {
 		sgIDToRemove := strings.Split(*sgToRemove.ResourceArn, "/")[1]
-		log.Println("sgIdToRemove: ", sgIDToRemove)
+		log.Println("Security Group: sgIdToRemove: ", sgIDToRemove)
 
 		secGrpInp := &ec2.DeleteSecurityGroupInput{GroupId: &sgIDToRemove}
 
 		output, err := ec2Client.DeleteSecurityGroup(secGrpInp)
-		log.Println("Output: ", output)
-		log.Println("Error: ", err)
+		if err != nil {
+			log.Fatal("Security Group: Deleting security group error: ", err)
+		}
+
+		log.Println("Security Group: Deleting security group: ", output)
 	}
 
 }
@@ -450,25 +453,26 @@ func removeSecurityGroup(sgsToRemove []*resourcegroups.ResourceIdentifier) {
 func removeInternetGateway(igsToRemove []*resourcegroups.ResourceIdentifier) {
 	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
 	if err != nil {
-		log.Fatal("Cannot get session.")
+		log.Fatal("Internet Gateway: Cannot get session.")
 	}
 
 	ec2Client := ec2.New(newSession)
 
-	log.Println("Removing...")
-
 	for _, igToRemove := range igsToRemove {
 		igIDToRemove := strings.Split(*igToRemove.ResourceArn, "/")[1]
-		log.Println("igIdToRemove: ", igIDToRemove)
+		log.Println("Internet Gateway: igIdToRemove: ", igIDToRemove)
 
 		igDescribeInp := &ec2.DescribeInternetGatewaysInput{
 			InternetGatewayIds: []*string{&igIDToRemove},
 		}
 
 		descOut, descErr := ec2Client.DescribeInternetGateways(igDescribeInp)
+
+		if descErr != nil {
+			log.Fatal("Internet Gateway: Describing internet gateway error: ", descErr)
+		}
+		log.Println("Internet Gateway: Describing internet gateway: ", descOut)
 		vpcID := *descOut.InternetGateways[0].Attachments[0].VpcId
-		log.Println("Describe-IG-Output: ", descOut)
-		log.Println("Describe-IG-Error: ", descErr)
 
 		igDetachInp := &ec2.DetachInternetGatewayInput{
 			InternetGatewayId: &igIDToRemove,
@@ -476,41 +480,68 @@ func removeInternetGateway(igsToRemove []*resourcegroups.ResourceIdentifier) {
 		}
 
 		detachOut, detachErr := ec2Client.DetachInternetGateway(igDetachInp)
-		log.Println("Detach-IG-Output: ", detachOut)
-		log.Println("Detach-IG-Error: ", detachErr)
+		if detachErr != nil {
+			log.Fatal("Internet Gateway: Detaching internet gateway error: ", detachErr)
+		}
+		log.Println("Internet Gateway: Detaching internet gateway: ", detachOut)
 
 		igDeleteInp := &ec2.DeleteInternetGatewayInput{
 			InternetGatewayId: &igIDToRemove,
 		}
 
 		delOut, delErr := ec2Client.DeleteInternetGateway(igDeleteInp)
-		log.Println("Delete-IG-Output: ", delOut)
-		log.Println("Delete-IG-Error: ", delErr)
-
+		if delErr != nil {
+			log.Fatal("Internet Gateway: Deleting internet gateway error: ", delErr)
+		}
+		log.Println("Internet Gateway: Deleting internet gateway: ", delOut)
 	}
 }
 
 func removeNatGateway(ngsToRemove []*resourcegroups.ResourceIdentifier) {
 	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
 	if err != nil {
-		log.Fatal("Cannot get session.")
+		log.Fatal("Nat Gateway: Cannot get session.")
 	}
 
 	ec2Client := ec2.New(newSession)
 
-	log.Println("Removing...")
-
 	for _, ngToRemove := range ngsToRemove {
 		ngIDToRemove := strings.Split(*ngToRemove.ResourceArn, "/")[1]
-		log.Println("ngIdToRemove: ", ngIDToRemove)
+		log.Println("Nat Gateway: ngIdToRemove: ", ngIDToRemove)
 
-		ngInp := &ec2.DeleteNatGatewayInput{
-			NatGatewayId: &ngIDToRemove,
+		descInp := &ec2.DescribeNatGatewaysInput{
+			NatGatewayIds: []*string{&ngIDToRemove},
 		}
 
-		output, err := ec2Client.DeleteNatGateway(ngInp)
-		log.Println("Output: ", output)
-		log.Println("Error: ", err)
+		outDesc, errDesc := ec2Client.DescribeNatGateways(descInp)
+		if errDesc != nil {
+
+			if aerr, ok := errDesc.(awserr.Error); ok {
+				log.Println("Aerr code: ", aerr.Code())
+				if aerr.Code() != "NatGatewayNotFound" {
+					log.Fatalf("Nat Gateway: Describe error: %s", errDesc)
+				}
+			}
+		}
+		log.Printf("Nat Gateway: Describe output: %s", outDesc)
+
+		if outDesc.NatGateways != nil && *outDesc.NatGateways[0].State != "deleted" {
+			ngInp := &ec2.DeleteNatGatewayInput{
+				NatGatewayId: &ngIDToRemove,
+			}
+
+			output, err := ec2Client.DeleteNatGateway(ngInp)
+			if err != nil {
+				log.Fatal("Nat Gateway: Deleting NAT Gateway error: ", err)
+			}
+			log.Println("Nat Gateway: Deleting NAT Gateway: ", output)
+
+			// errWait := ec2Client.WaitUntilNatGatewayAvailable(descInp)
+			// if errWait != nil {
+			// 	log.Fatal("Nat Gateway: Waiting for termination error: ", errWait)
+			// }
+		}
+
 	}
 
 }
@@ -518,24 +549,24 @@ func removeNatGateway(ngsToRemove []*resourcegroups.ResourceIdentifier) {
 func removeSubnet(subnetsToRemove []*resourcegroups.ResourceIdentifier) {
 	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
 	if err != nil {
-		log.Fatal("Cannot get session.")
+		log.Fatal("Subnet: Cannot get session.")
 	}
 
 	ec2Client := ec2.New(newSession)
 
-	log.Println("Removing...")
-
 	for _, subnetToRemove := range subnetsToRemove {
 		subnetIDToRemove := strings.Split(*subnetToRemove.ResourceArn, "/")[1]
-		log.Println("subnetIdToRemove: ", subnetIDToRemove)
+		log.Println("Subnet: subnetIdToRemove: ", subnetIDToRemove)
 
 		subnetInp := &ec2.DeleteSubnetInput{
 			SubnetId: &subnetIDToRemove,
 		}
 
 		output, err := ec2Client.DeleteSubnet(subnetInp)
-		log.Println("Output: ", output)
-		log.Println("Error: ", err)
+		if err != nil {
+			log.Fatal("Subnet: Deleting subnet error: ", err)
+		}
+		log.Println("Subnet: Deleting subnet: ", output)
 	}
 
 }
@@ -543,59 +574,57 @@ func removeSubnet(subnetsToRemove []*resourcegroups.ResourceIdentifier) {
 func removeVpc(vpcsToRemove []*resourcegroups.ResourceIdentifier) {
 	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
 	if err != nil {
-		log.Fatal("Cannot get session.")
+		log.Fatal("VPC: Cannot get session.")
 	}
 
 	ec2Client := ec2.New(newSession)
 
-	log.Println("Removing...")
-
 	for _, vpcToRemove := range vpcsToRemove {
 		vpcIDToRemove := strings.Split(*vpcToRemove.ResourceArn, "/")[1]
-		log.Println("vpcIdToRemove: ", vpcIDToRemove)
+		log.Println("VPC: vpcIdToRemove: ", vpcIDToRemove)
 
 		vpcToDeleteInp := &ec2.DeleteVpcInput{
 			VpcId: &vpcIDToRemove,
 		}
 
 		output, err := ec2Client.DeleteVpc(vpcToDeleteInp)
-		log.Println("Output: ", output)
-		log.Println("Error: ", err)
+		if err != nil {
+			log.Println("VPC: Delete VPC error: ", err)
+		}
+		log.Println("VPC: Delete VPC: ", output)
 	}
 }
 
 func removeKeyPair(kpName string) {
 	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
 	if err != nil {
-		log.Fatal("Cannot get session.", err)
+		log.Fatal("Key Pair: Cannot get session.", err)
 	}
 
 	ec2Client := ec2.New(newSession)
-
-	log.Println("Removing...")
 
 	removeKeyInp := &ec2.DeleteKeyPairInput{
 		KeyName: &kpName,
 	}
 
 	output, err := ec2Client.DeleteKeyPair(removeKeyInp)
-	log.Println("Output: ", output)
-	log.Println("Error: ", err)
+	if err != nil {
+		log.Fatal("Key Pair: Deleting key pair error: ", err)
+	}
+	log.Println("Key Pair: Deleting key pair: ", output)
 }
 
 func releaseAddresses(eipName string) {
 	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
 	if err != nil {
-		log.Fatal("Cannot get session.", err)
+		log.Fatal("EIP: Cannot get session.", err)
 	}
 
 	ec2Client := ec2.New(newSession)
 
-	log.Println("Removing...")
-
 	describeEips, err := ec2Client.DescribeAddresses(&ec2.DescribeAddressesInput{})
 	if err != nil {
-		log.Fatal("Cannot get EIP list.")
+		log.Fatal("EIP: Cannot get EIP list.", err)
 	}
 
 	for _, eip := range describeEips.Addresses {
@@ -604,20 +633,48 @@ func releaseAddresses(eipName string) {
 		if eip.Tags != nil {
 			tagPresent = checkIfTagPresent(eipName, eip.Tags)
 			if tagPresent {
-				log.Printf("Remove EIP with AllocationId: %s", *eip.AllocationId)
+				log.Printf("EIP: Releasing EIP with AllocationId: %s", *eip.AllocationId)
+
+				outDesc, errDesc := ec2Client.DescribeAddresses(&ec2.DescribeAddressesInput{
+					AllocationIds: []*string{eip.AllocationId},
+				})
+
+				log.Printf("outdesc: %s, errdesc: %s", outDesc, errDesc)
 
 				eipToReleaseInp := &ec2.ReleaseAddressInput{
 					AllocationId: eip.AllocationId,
 				}
 
 				output, err := ec2Client.ReleaseAddress(eipToReleaseInp)
-				log.Println("Output: ", output)
-				log.Println("Error: ", err)
+				if err != nil {
+					log.Fatal("EIP: Releasing EIP error: ", err)
+				}
+				log.Println("EIP: Releasing EIP: ", output)
 			}
 		}
 
 	}
 
+}
+
+func removeResourceGroup(rgToRemoveName string) {
+
+	session, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
+	if err != nil {
+		log.Fatal("Resource Group: Cannot get session.")
+	}
+
+	rgClient := resourcegroups.New(session)
+
+	log.Println("Resource Group: Removing resource group: ", rgToRemoveName)
+	rgDelInp := resourcegroups.DeleteGroupInput{
+		GroupName: aws.String(rgToRemoveName),
+	}
+	rgDelOut, rgDelErr := rgClient.DeleteGroup(&rgDelInp)
+	if rgDelErr != nil {
+		log.Fatal("Resource Group: Deleting resource group error: ", rgDelErr)
+	}
+	log.Println("Resource Group: Deleting resource group: ", rgDelOut)
 }
 
 func checkIfTagPresent(toFind string, tags []*ec2.Tag) bool {
