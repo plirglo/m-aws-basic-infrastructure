@@ -42,8 +42,8 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	// cleanupAWSResources()
 	cleanup()
+	cleanupAWSResources()
 	setup()
 	log.Println("Run tests")
 	exitVal := m.Run()
@@ -308,8 +308,6 @@ func cleanupAWSResources() {
 		case "VPC":
 			log.Println("VPC.")
 			removeVpc(filtered)
-		default:
-			log.Println("Wawaweewa.")
 		}
 	}
 
@@ -518,7 +516,6 @@ func removeNatGateway(ngsToRemove []*resourcegroups.ResourceIdentifier) {
 		if errDesc != nil {
 
 			if aerr, ok := errDesc.(awserr.Error); ok {
-				log.Println("Aerr code: ", aerr.Code())
 				if aerr.Code() != "NatGatewayNotFound" {
 					log.Fatal("Nat Gateway: Describe error: ", errDesc)
 				}
@@ -540,7 +537,6 @@ func removeNatGateway(ngsToRemove []*resourcegroups.ResourceIdentifier) {
 			errWait := ec2Client.WaitUntilNatGatewayAvailable(descInp)
 			if errWait != nil {
 				if aerr, ok := errDesc.(awserr.Error); ok {
-					log.Println("Aerr code: ", aerr.Code())
 					if aerr.Code() != "ResourceNotReady" {
 						log.Fatal("Nat Gateway: Wait error: ", errDesc)
 					}
@@ -641,28 +637,28 @@ func releaseAddresses(eipName string) {
 			if tagPresent {
 				log.Printf("EIP: Releasing EIP with AllocationId: %s", *eip.AllocationId)
 
-				outDesc, errDesc := ec2Client.DescribeAddresses(&ec2.DescribeAddressesInput{
-					AllocationIds: []*string{eip.AllocationId},
-				})
-
-				log.Printf("outdesc: %s, errdesc: %s", outDesc, errDesc)
-
 				eipToReleaseInp := &ec2.ReleaseAddressInput{
 					AllocationId: eip.AllocationId,
 				}
 
-				for retry := 1; retry <= 15; retry++ {
-					output, err := ec2Client.ReleaseAddress(eipToReleaseInp)
+				found := true
+
+				for retry := 0; retry <= 30 && found; retry++ {
+					_, err := ec2Client.ReleaseAddress(eipToReleaseInp)
 					if err != nil {
 						if aerr, ok := err.(awserr.Error); ok {
-							log.Println("Aerr code: ", retry, aerr.Code())
+							if aerr.Code() == "InvalidAllocationID.NotFound" {
+								log.Print("EIP: Element not found.", err)
+								found = false
+								continue
+							}
 							if aerr.Code() != "AuthFailure" && aerr.Code() != "InvalidAllocationID.NotFound" {
 								log.Fatal("EIP: Releasing EIP error: ", err)
 							}
 						}
 					}
+					log.Println("EIP: Releasing EIP. Retry: ", retry)
 					time.Sleep(5 * time.Second)
-					log.Println("EIP: Releasing EIP: ", output)
 				}
 			}
 		}
@@ -686,9 +682,18 @@ func removeResourceGroup(rgToRemoveName string) {
 	}
 	rgDelOut, rgDelErr := rgClient.DeleteGroup(&rgDelInp)
 	if rgDelErr != nil {
-		log.Fatal("Resource Group: Deleting resource group error: ", rgDelErr)
+		if aerr, ok := rgDelErr.(awserr.Error); ok {
+			if aerr.Code() == "NotFoundException" {
+				log.Println("Resource Group: Resource group not found. ")
+			} else {
+				log.Fatal("Resource Group: Deleting resource group error: ", rgDelErr)
+			}
+		}
+
+	} else {
+		log.Println("Resource Group: Deleting resource group: ", rgDelOut)
 	}
-	log.Println("Resource Group: Deleting resource group: ", rgDelOut)
+
 }
 
 func checkIfTagPresent(toFind string, tags []*ec2.Tag) bool {
