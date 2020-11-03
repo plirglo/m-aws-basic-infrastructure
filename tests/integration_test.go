@@ -15,6 +15,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 
@@ -41,15 +42,15 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	cleanupAWSResources()
-	// cleanup()
-	// setup()
-	// log.Println("Run tests")
-	// exitVal := m.Run()
-	// log.Println("Finish test")
-	// cleanup()
 	// cleanupAWSResources()
-	// os.Exit(exitVal)
+	cleanup()
+	setup()
+	log.Println("Run tests")
+	exitVal := m.Run()
+	log.Println("Finish test")
+	cleanup()
+	cleanupAWSResources()
+	os.Exit(exitVal)
 }
 
 func TestInitShouldCreateProperFileAndFolder(t *testing.T) {
@@ -519,7 +520,7 @@ func removeNatGateway(ngsToRemove []*resourcegroups.ResourceIdentifier) {
 			if aerr, ok := errDesc.(awserr.Error); ok {
 				log.Println("Aerr code: ", aerr.Code())
 				if aerr.Code() != "NatGatewayNotFound" {
-					log.Fatalf("Nat Gateway: Describe error: %s", errDesc)
+					log.Fatal("Nat Gateway: Describe error: ", errDesc)
 				}
 			}
 		}
@@ -536,10 +537,15 @@ func removeNatGateway(ngsToRemove []*resourcegroups.ResourceIdentifier) {
 			}
 			log.Println("Nat Gateway: Deleting NAT Gateway: ", output)
 
-			// errWait := ec2Client.WaitUntilNatGatewayAvailable(descInp)
-			// if errWait != nil {
-			// 	log.Fatal("Nat Gateway: Waiting for termination error: ", errWait)
-			// }
+			errWait := ec2Client.WaitUntilNatGatewayAvailable(descInp)
+			if errWait != nil {
+				if aerr, ok := errDesc.(awserr.Error); ok {
+					log.Println("Aerr code: ", aerr.Code())
+					if aerr.Code() != "ResourceNotReady" {
+						log.Fatal("Nat Gateway: Wait error: ", errDesc)
+					}
+				}
+			}
 		}
 
 	}
@@ -645,11 +651,19 @@ func releaseAddresses(eipName string) {
 					AllocationId: eip.AllocationId,
 				}
 
-				output, err := ec2Client.ReleaseAddress(eipToReleaseInp)
-				if err != nil {
-					log.Fatal("EIP: Releasing EIP error: ", err)
+				for retry := 1; retry <= 15; retry++ {
+					output, err := ec2Client.ReleaseAddress(eipToReleaseInp)
+					if err != nil {
+						if aerr, ok := err.(awserr.Error); ok {
+							log.Println("Aerr code: ", retry, aerr.Code())
+							if aerr.Code() != "AuthFailure" && aerr.Code() != "InvalidAllocationID.NotFound" {
+								log.Fatal("EIP: Releasing EIP error: ", err)
+							}
+						}
+					}
+					time.Sleep(5 * time.Second)
+					log.Println("EIP: Releasing EIP: ", output)
 				}
-				log.Println("EIP: Releasing EIP: ", output)
 			}
 		}
 
