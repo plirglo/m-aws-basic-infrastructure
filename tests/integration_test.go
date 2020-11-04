@@ -27,13 +27,13 @@ import (
 )
 
 const (
-	imageTag   = "epiphanyplatform/awsbi:0.0.1"
 	awsTag     = "awsbi-module"
 	moduleName = "awsbi-module"
 	sshKeyName = "vms_rsa"
 )
 
 var (
+	imageTag                  string
 	awsAccessKey              string
 	awsSecretKey              string
 	sharedAbsoluteFilePath, _ = filepath.Abs("./shared")
@@ -214,6 +214,7 @@ func setup() {
 	if len(awsAccessKey) == 0 {
 		log.Fatalf("expected non-empty AWS_ACCESS_KEY_ID environment variable")
 	}
+
 	awsAccessKey = "M_AWS_ACCESS_KEY=" + awsAccessKey
 
 	awsSecretKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
@@ -221,6 +222,11 @@ func setup() {
 		log.Fatalf("expected non-empty AWS_SECRET_ACCESS_KEY environment variable")
 	}
 	awsSecretKey = "M_AWS_SECRET_KEY=" + awsSecretKey
+
+	imageTag = os.Getenv("AWSBI_IMAGE_TAG")
+	if len(imageTag) == 0 {
+		log.Fatalf("expected non-empty AWSBI_IMAGE_TAG environment variable")
+	}
 
 	err := os.MkdirAll(sharedAbsoluteFilePath, os.ModePerm)
 	if err != nil {
