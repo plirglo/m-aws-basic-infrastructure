@@ -132,6 +132,7 @@ The output from this module is:
 Prior to run integration tests on for AWS module specify variables on OS where you want to run tests:
 - AWS_ACCESS_KEY_ID - this is your access key
 - AWS_SECRET_ACCESS_KEY - this is your secret
+- AWSBI_IMAGE_TAG - this is full tag of docker image that you want to test e.g. "epiphanyplatform/awsbi:0.0.1"
 
 and after that run shell command:
 
