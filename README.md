@@ -125,6 +125,26 @@ The output from this module is:
 * vpc_id
 * private_route_table_id
 
+<<<<<<< HEAD
+=======
+## Integration tests execution
+
+Prior to run integration tests on for AWS module specify variables on OS where you want to run tests:
+- AWS_ACCESS_KEY_ID - this is your access key
+- AWS_SECRET_ACCESS_KEY - this is your secret
+
+and after that run shell command:
+
+```shell
+  make test
+```
+
+# Windows users
+
+This module is designed for Linux/Unix development/usage only. If you need to develop from Windows you can use the included [devcontainer setup for VScode](https://code.visualstudio.com/docs/remote/containers-tutorial) and run the examples the same way but then from then ```examples/basic_flow_devcontainer``` folder.
+
+
+>>>>>>> b35799e... Add short introduction for testing to README
 ## Module dependencies
 
 | Component                 | Version | Repo/Website                                          | License                                                           |
