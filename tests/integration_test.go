@@ -42,18 +42,18 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	cleanup()
+	cleanupDiskTestStructure()
 	cleanupAWSResources()
 	setup()
 	log.Println("Run tests")
 	exitVal := m.Run()
 	log.Println("Finish test")
-	cleanup()
+	cleanupDiskTestStructure()
 	cleanupAWSResources()
 	os.Exit(exitVal)
 }
 
-func TestInitShouldCreateProperFileAndFolder(t *testing.T) {
+func TestOnInitWithDefaultsShouldCreateProperFileAndFolder(t *testing.T) {
 	// given
 	stateFilePath := "shared/state.yml"
 	expectedFileContentRegexp := "kind: state\nawsbi:\n  status: initialized"
@@ -69,7 +69,10 @@ func TestInitShouldCreateProperFileAndFolder(t *testing.T) {
 
 	fileContent := string(data)
 
-	matched, _ := regexp.MatchString(expectedFileContentRegexp, fileContent)
+	matched, err := regexp.MatchString(expectedFileContentRegexp, fileContent)
+	if err != nil {
+		t.Fatal("There was an error matching expression: ", err)
+	}
 
 	// then
 	if !matched {
@@ -80,12 +83,10 @@ func TestInitShouldCreateProperFileAndFolder(t *testing.T) {
 
 func TestOnPlanWithDefaultsShouldDisplayPlan(t *testing.T) {
 	// given
-	var stdout, stderr bytes.Buffer
-
 	expectedOutputRegexp := ".*Plan: 14 to add, 0 to change, 0 to destroy.*"
 
 	// when
-	stdout, stderr = runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "plan", awsAccessKey, awsSecretKey)
+	stdout, stderr := runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "plan", awsAccessKey, awsSecretKey)
 
 	if stderr.Len() > 0 {
 		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
@@ -93,7 +94,10 @@ func TestOnPlanWithDefaultsShouldDisplayPlan(t *testing.T) {
 
 	outStr := string(stdout.Bytes())
 
-	matched, _ := regexp.MatchString(expectedOutputRegexp, outStr)
+	matched, err := regexp.MatchString(expectedOutputRegexp, outStr)
+	if err != nil {
+		t.Fatal("There was an error matching expression: ", err)
+	}
 
 	// then
 	if !matched {
@@ -104,11 +108,10 @@ func TestOnPlanWithDefaultsShouldDisplayPlan(t *testing.T) {
 
 func TestOnApplyShouldCreateEnvironment(t *testing.T) {
 	// given
-	var stdout, stderr bytes.Buffer
 	expectedOutputRegexp := ".*Apply complete! Resources: 14 added, 0 changed, 0 destroyed.*"
 
 	// when
-	stdout, stderr = runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "apply", awsAccessKey, awsSecretKey)
+	stdout, stderr := runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "apply", awsAccessKey, awsSecretKey)
 
 	if stderr.Len() > 0 {
 		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
@@ -116,7 +119,10 @@ func TestOnApplyShouldCreateEnvironment(t *testing.T) {
 
 	outStr := string(stdout.Bytes())
 
-	matched, _ := regexp.MatchString(expectedOutputRegexp, outStr)
+	matched, err := regexp.MatchString(expectedOutputRegexp, outStr)
+	if err != nil {
+		t.Fatal("There was an error matching expression: ", err)
+	}
 
 	// then
 	if !matched {
@@ -151,12 +157,11 @@ func TestShouldCheckNumberOfVms(t *testing.T) {
 	}
 
 	ec2Result, err := ec2Client.DescribeInstances(ec2DescInp)
-
-	// then
 	if err != nil {
 		t.Fatal("There was an error. ", err)
 	}
 
+	// then
 	if len(ec2Result.Reservations[0].Instances) != 1 {
 		t.Error("Expected ", instancesNumber, "instance, got ", len(ec2Result.Reservations[0].Instances))
 	}
@@ -165,11 +170,10 @@ func TestShouldCheckNumberOfVms(t *testing.T) {
 
 func TestOnDestroyPlanShouldDisplayDestroyPlan(t *testing.T) {
 	// given
-	var stdout, stderr bytes.Buffer
 	expectedOutputRegexp := "Plan: 0 to add, 0 to change, 14 to destroy"
 
 	// when
-	stdout, stderr = runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "plan-destroy", awsAccessKey, awsSecretKey)
+	stdout, stderr := runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "plan-destroy", awsAccessKey, awsSecretKey)
 
 	if stderr.Len() > 0 {
 		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
@@ -177,7 +181,10 @@ func TestOnDestroyPlanShouldDisplayDestroyPlan(t *testing.T) {
 
 	outStr := string(stdout.Bytes())
 
-	matched, _ := regexp.MatchString(expectedOutputRegexp, outStr)
+	matched, err := regexp.MatchString(expectedOutputRegexp, outStr)
+	if err != nil {
+		t.Fatal("There was an error matching expression: ", err)
+	}
 
 	// then
 	if !matched {
@@ -187,12 +194,10 @@ func TestOnDestroyPlanShouldDisplayDestroyPlan(t *testing.T) {
 
 func TestOnDestroyShouldDestroyEnvironment(t *testing.T) {
 	// given
-	var stdout, stderr bytes.Buffer
-
 	expectedOutputRegexp := "Apply complete! Resources: 0 added, 0 changed, 14 destroyed."
 
 	// when
-	stdout, stderr = runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "destroy", awsAccessKey, awsSecretKey)
+	stdout, stderr := runCommand(dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "destroy", awsAccessKey, awsSecretKey)
 
 	if stderr.Len() > 0 {
 		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
@@ -200,7 +205,10 @@ func TestOnDestroyShouldDestroyEnvironment(t *testing.T) {
 
 	outStr := string(stdout.Bytes())
 
-	matched, _ := regexp.MatchString(expectedOutputRegexp, outStr)
+	matched, err := regexp.MatchString(expectedOutputRegexp, outStr)
+	if err != nil {
+		t.Fatal("There was an error matching expression: ", err)
+	}
 
 	// then
 	if !matched {
@@ -209,12 +217,11 @@ func TestOnDestroyShouldDestroyEnvironment(t *testing.T) {
 }
 
 func setup() {
-	awsAccessKey = os.Getenv("AWS_ACCESS_KEY_ID")
 	log.Println("Initialize test")
+	awsAccessKey = os.Getenv("AWS_ACCESS_KEY_ID")
 	if len(awsAccessKey) == 0 {
 		log.Fatalf("expected non-empty AWS_ACCESS_KEY_ID environment variable")
 	}
-
 	awsAccessKey = "M_AWS_ACCESS_KEY=" + awsAccessKey
 
 	awsSecretKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
@@ -239,7 +246,7 @@ func setup() {
 	}
 }
 
-func cleanup() {
+func cleanupDiskTestStructure() {
 	log.Println("Starting cleanup.")
 	err := os.RemoveAll(sharedAbsoluteFilePath)
 	if err != nil {
