@@ -69,7 +69,7 @@ func TestOnInitWithDefaultsShouldCreateProperFileAndFolder(t *testing.T) {
 	data, err := ioutil.ReadFile(stateFilePath)
 
 	if err != nil {
-		t.Fatal("Cannot read state file: ", stateFilePath)
+		t.Fatal("Cannot read state file: ", stateFilePath, err)
 	}
 
 	fileContent := string(data)
@@ -140,9 +140,9 @@ func TestShouldCheckNumberOfVms(t *testing.T) {
 	// given
 	instancesNumber := 1
 
-	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
-	if err != nil {
-		t.Fatal("Cannot get session.")
+	newSession, errSession := session.NewSession(&aws.Config{Region: aws.String(awsRegion)})
+	if errSession != nil {
+		t.Fatal("Cannot get session.", errSession)
 	}
 
 	// when
@@ -262,22 +262,31 @@ func cleanupDiskTestStructure() {
 
 func cleanupAWSResources() {
 
-	session, err := session.NewSession(&aws.Config{Region: aws.String(awsRegion)})
-	if err != nil {
-		log.Fatal("Cannot get session.")
+	newSession, errSession := session.NewSession(&aws.Config{Region: aws.String(awsRegion)})
+	if errSession != nil {
+		log.Fatal("Cannot get session.", errSession)
 	}
 
-	rgClient := resourcegroups.New(session)
+	rgClient := resourcegroups.New(newSession)
 
 	rgName := "rg-" + moduleName
 	kpName := "kp-" + moduleName
 	eipName := "eip-" + moduleName
 
-	rgResourcesList, err := rgClient.ListGroupResources(&resourcegroups.ListGroupResourcesInput{
+	rgResourcesList, errResourcesList := rgClient.ListGroupResources(&resourcegroups.ListGroupResourcesInput{
 		GroupName: aws.String(rgName),
 	})
 
-	log.Println(rgResourcesList)
+	if errResourcesList != nil {
+		if aerr, ok := errResourcesList.(awserr.Error); ok {
+			log.Println(aerr.Code())
+			if aerr.Code() == "NotFoundException" {
+				log.Println("Resource group: ", rgName, " not found.")
+			} else {
+				log.Fatal("Cannot get list of resources: ", errResourcesList)
+			}
+		}
+	}
 
 	resourcesTypesToRemove := []string{"Instance", "SecurityGroup", "NatGateway", "EIP", "InternetGateway", "Subnet", "RouteTable", "VPC"}
 
@@ -295,34 +304,34 @@ func cleanupAWSResources() {
 		switch resourcesTypeToRemove {
 		case "Instance":
 			log.Println("Instance.")
-			removeEc2s(session, filtered)
+			removeEc2s(newSession, filtered)
 		case "EIP":
 			log.Println("Releasing public EIPs.")
-			releaseAddresses(session, eipName)
+			releaseAddresses(newSession, eipName)
 		case "RouteTable":
 			log.Println("RouteTable.")
-			removeRouteTables(session, filtered)
+			removeRouteTables(newSession, filtered)
 		case "InternetGateway":
 			log.Println("InternetGateway.")
-			removeInternetGateway(session, filtered)
+			removeInternetGateway(newSession, filtered)
 		case "SecurityGroup":
 			log.Println("SecurityGroup.")
-			removeSecurityGroup(session, filtered)
+			removeSecurityGroup(newSession, filtered)
 		case "NatGateway":
 			log.Println("NatGateway.")
-			removeNatGateway(session, filtered)
+			removeNatGateway(newSession, filtered)
 		case "Subnet":
 			log.Println("Subnet.")
-			removeSubnet(session, filtered)
+			removeSubnet(newSession, filtered)
 		case "VPC":
 			log.Println("VPC.")
-			removeVpc(session, filtered)
+			removeVpc(newSession, filtered)
 		}
 	}
 
-	removeResourceGroup(session, rgName)
+	removeResourceGroup(newSession, rgName)
 
-	removeKeyPair(session, kpName)
+	removeKeyPair(newSession, kpName)
 
 }
 
@@ -510,7 +519,9 @@ func removeNatGateway(session *session.Session, ngsToRemove []*resourcegroups.Re
 		if errDesc != nil {
 
 			if aerr, ok := errDesc.(awserr.Error); ok {
-				if aerr.Code() != "NatGatewayNotFound" {
+				if aerr.Code() == "NatGatewayNotFound" {
+					log.Println("Nat Gateway: Nat Gateway not found.")
+				} else {
 					log.Fatal("Nat Gateway: Describe error: ", errDesc)
 				}
 			}
