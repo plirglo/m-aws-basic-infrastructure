@@ -294,34 +294,34 @@ func cleanupAWSResources() {
 		switch resourcesTypeToRemove {
 		case "Instance":
 			log.Println("Instance.")
-			removeEc2s(filtered)
+			removeEc2s(session, filtered)
 		case "EIP":
 			log.Println("Releasing public EIPs.")
-			releaseAddresses(eipName)
+			releaseAddresses(session, eipName)
 		case "RouteTable":
 			log.Println("RouteTable.")
-			removeRouteTables(filtered)
+			removeRouteTables(session, filtered)
 		case "InternetGateway":
 			log.Println("InternetGateway.")
-			removeInternetGateway(filtered)
+			removeInternetGateway(session, filtered)
 		case "SecurityGroup":
 			log.Println("SecurityGroup.")
-			removeSecurityGroup(filtered)
+			removeSecurityGroup(session, filtered)
 		case "NatGateway":
 			log.Println("NatGateway.")
-			removeNatGateway(filtered)
+			removeNatGateway(session, filtered)
 		case "Subnet":
 			log.Println("Subnet.")
-			removeSubnet(filtered)
+			removeSubnet(session, filtered)
 		case "VPC":
 			log.Println("VPC.")
-			removeVpc(filtered)
+			removeVpc(session, filtered)
 		}
 	}
 
-	removeResourceGroup(rgName)
+	removeResourceGroup(session, rgName)
 
-	removeKeyPair(kpName)
+	removeKeyPair(session, kpName)
 
 }
 
@@ -366,13 +366,9 @@ func generateRsaKeyPair(directory, name string) error {
 	return ioutil.WriteFile(path.Join(directory, name+".pub"), publicKeyBytes, 0644)
 }
 
-func removeEc2s(ec2sToRemove []*resourcegroups.ResourceIdentifier) {
-	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
-	if err != nil {
-		log.Fatal("EC2: Cannot get session.")
-	}
+func removeEc2s(session *session.Session, ec2sToRemove []*resourcegroups.ResourceIdentifier) {
 
-	ec2Client := ec2.New(newSession)
+	ec2Client := ec2.New(session)
 
 	for _, ec2ToRemove := range ec2sToRemove {
 
@@ -411,13 +407,9 @@ func removeEc2s(ec2sToRemove []*resourcegroups.ResourceIdentifier) {
 
 }
 
-func removeRouteTables(rtsToRemove []*resourcegroups.ResourceIdentifier) {
-	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
-	if err != nil {
-		log.Fatal("RouteTable: Cannot get session.")
-	}
+func removeRouteTables(session *session.Session, rtsToRemove []*resourcegroups.ResourceIdentifier) {
 
-	ec2Client := ec2.New(newSession)
+	ec2Client := ec2.New(session)
 
 	for _, rtToRemove := range rtsToRemove {
 		rtIDToRemove := strings.Split(*rtToRemove.ResourceArn, "/")[1]
@@ -438,13 +430,9 @@ func removeRouteTables(rtsToRemove []*resourcegroups.ResourceIdentifier) {
 
 }
 
-func removeSecurityGroup(sgsToRemove []*resourcegroups.ResourceIdentifier) {
-	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
-	if err != nil {
-		log.Fatal("Security Group: Cannot get session.")
-	}
+func removeSecurityGroup(session *session.Session, sgsToRemove []*resourcegroups.ResourceIdentifier) {
 
-	ec2Client := ec2.New(newSession)
+	ec2Client := ec2.New(session)
 
 	for _, sgToRemove := range sgsToRemove {
 		sgIDToRemove := strings.Split(*sgToRemove.ResourceArn, "/")[1]
@@ -462,13 +450,9 @@ func removeSecurityGroup(sgsToRemove []*resourcegroups.ResourceIdentifier) {
 
 }
 
-func removeInternetGateway(igsToRemove []*resourcegroups.ResourceIdentifier) {
-	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
-	if err != nil {
-		log.Fatal("Internet Gateway: Cannot get session.")
-	}
+func removeInternetGateway(session *session.Session, igsToRemove []*resourcegroups.ResourceIdentifier) {
 
-	ec2Client := ec2.New(newSession)
+	ec2Client := ec2.New(session)
 
 	for _, igToRemove := range igsToRemove {
 		igIDToRemove := strings.Split(*igToRemove.ResourceArn, "/")[1]
@@ -509,13 +493,9 @@ func removeInternetGateway(igsToRemove []*resourcegroups.ResourceIdentifier) {
 	}
 }
 
-func removeNatGateway(ngsToRemove []*resourcegroups.ResourceIdentifier) {
-	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
-	if err != nil {
-		log.Fatal("Nat Gateway: Cannot get session.")
-	}
+func removeNatGateway(session *session.Session, ngsToRemove []*resourcegroups.ResourceIdentifier) {
 
-	ec2Client := ec2.New(newSession)
+	ec2Client := ec2.New(session)
 
 	for _, ngToRemove := range ngsToRemove {
 		ngIDToRemove := strings.Split(*ngToRemove.ResourceArn, "/")[1]
@@ -561,13 +541,9 @@ func removeNatGateway(ngsToRemove []*resourcegroups.ResourceIdentifier) {
 
 }
 
-func removeSubnet(subnetsToRemove []*resourcegroups.ResourceIdentifier) {
-	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
-	if err != nil {
-		log.Fatal("Subnet: Cannot get session.")
-	}
+func removeSubnet(session *session.Session, subnetsToRemove []*resourcegroups.ResourceIdentifier) {
 
-	ec2Client := ec2.New(newSession)
+	ec2Client := ec2.New(session)
 
 	for _, subnetToRemove := range subnetsToRemove {
 		subnetIDToRemove := strings.Split(*subnetToRemove.ResourceArn, "/")[1]
@@ -586,13 +562,9 @@ func removeSubnet(subnetsToRemove []*resourcegroups.ResourceIdentifier) {
 
 }
 
-func removeVpc(vpcsToRemove []*resourcegroups.ResourceIdentifier) {
-	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
-	if err != nil {
-		log.Fatal("VPC: Cannot get session.")
-	}
+func removeVpc(session *session.Session, vpcsToRemove []*resourcegroups.ResourceIdentifier) {
 
-	ec2Client := ec2.New(newSession)
+	ec2Client := ec2.New(session)
 
 	for _, vpcToRemove := range vpcsToRemove {
 		vpcIDToRemove := strings.Split(*vpcToRemove.ResourceArn, "/")[1]
@@ -610,13 +582,9 @@ func removeVpc(vpcsToRemove []*resourcegroups.ResourceIdentifier) {
 	}
 }
 
-func removeKeyPair(kpName string) {
-	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
-	if err != nil {
-		log.Fatal("Key Pair: Cannot get session.", err)
-	}
+func removeKeyPair(session *session.Session, kpName string) {
 
-	ec2Client := ec2.New(newSession)
+	ec2Client := ec2.New(session)
 
 	removeKeyInp := &ec2.DeleteKeyPairInput{
 		KeyName: &kpName,
@@ -629,13 +597,9 @@ func removeKeyPair(kpName string) {
 	log.Println("Key Pair: Deleting key pair: ", output)
 }
 
-func releaseAddresses(eipName string) {
-	newSession, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
-	if err != nil {
-		log.Fatal("EIP: Cannot get session.", err)
-	}
+func releaseAddresses(session *session.Session, eipName string) {
 
-	ec2Client := ec2.New(newSession)
+	ec2Client := ec2.New(session)
 
 	describeEips, err := ec2Client.DescribeAddresses(&ec2.DescribeAddressesInput{})
 	if err != nil {
@@ -680,12 +644,7 @@ func releaseAddresses(eipName string) {
 
 }
 
-func removeResourceGroup(rgToRemoveName string) {
-
-	session, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
-	if err != nil {
-		log.Fatal("Resource Group: Cannot get session.")
-	}
+func removeResourceGroup(session *session.Session, rgToRemoveName string) {
 
 	rgClient := resourcegroups.New(session)
 
