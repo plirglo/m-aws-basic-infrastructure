@@ -59,7 +59,11 @@ func TestOnInitWithDefaultsShouldCreateProperFileAndFolder(t *testing.T) {
 	expectedFileContentRegexp := "kind: state\nawsbi:\n  status: initialized"
 
 	// when
-	runCommand(t, dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "init", "M_NAME="+moduleName)
+	_, stderr := runDocker(t, "init", "M_NAME="+moduleName)
+
+	if stderr.Len() > 0 {
+		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
+	}
 
 	data, err := ioutil.ReadFile(stateFilePath)
 
@@ -86,7 +90,7 @@ func TestOnPlanWithDefaultsShouldDisplayPlan(t *testing.T) {
 	expectedOutputRegexp := ".*Plan: 14 to add, 0 to change, 0 to destroy.*"
 
 	// when
-	stdout, stderr := runCommand(t, dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "plan", awsAccessKey, awsSecretKey)
+	stdout, stderr := runDocker(t, "plan", awsAccessKey, awsSecretKey)
 
 	if stderr.Len() > 0 {
 		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
@@ -111,7 +115,7 @@ func TestOnApplyShouldCreateEnvironment(t *testing.T) {
 	expectedOutputRegexp := ".*Apply complete! Resources: 14 added, 0 changed, 0 destroyed.*"
 
 	// when
-	stdout, stderr := runCommand(t, dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "apply", awsAccessKey, awsSecretKey)
+	stdout, stderr := runDocker(t, "apply", awsAccessKey, awsSecretKey)
 
 	if stderr.Len() > 0 {
 		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
@@ -173,7 +177,7 @@ func TestOnDestroyPlanShouldDisplayDestroyPlan(t *testing.T) {
 	expectedOutputRegexp := "Plan: 0 to add, 0 to change, 14 to destroy"
 
 	// when
-	stdout, stderr := runCommand(t, dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "plan-destroy", awsAccessKey, awsSecretKey)
+	stdout, stderr := runDocker(t, "plan-destroy", awsAccessKey, awsSecretKey)
 
 	if stderr.Len() > 0 {
 		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
@@ -197,7 +201,7 @@ func TestOnDestroyShouldDestroyEnvironment(t *testing.T) {
 	expectedOutputRegexp := "Apply complete! Resources: 0 added, 0 changed, 14 destroyed."
 
 	// when
-	stdout, stderr := runCommand(t, dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag, "destroy", awsAccessKey, awsSecretKey)
+	stdout, stderr := runDocker(t, "destroy", awsAccessKey, awsSecretKey)
 
 	if stderr.Len() > 0 {
 		t.Fatal("There was an error during executing a command. ", string(stderr.Bytes()))
@@ -321,15 +325,20 @@ func cleanupAWSResources() {
 
 }
 
-func runCommand(t *testing.T, commandWithParams ...string) (bytes.Buffer, bytes.Buffer) {
+func runDocker(t *testing.T, params ...string) (bytes.Buffer, bytes.Buffer) {
 	var stdout, stderr bytes.Buffer
-	dockerRunInit := &exec.Cmd{
+
+	commandWithParams := []string{dockerExecPath, "run", "--rm", "-v", mountDir, "-t", imageTag}
+
+	commandWithParams = append(commandWithParams, params...)
+
+	command := &exec.Cmd{
 		Path:   commandWithParams[0],
 		Args:   commandWithParams,
 		Stdout: &stdout,
 		Stderr: &stderr,
 	}
-	if err := dockerRunInit.Run(); err != nil {
+	if err := command.Run(); err != nil {
 		t.Fatal("There was an error running command:", err)
 	}
 
