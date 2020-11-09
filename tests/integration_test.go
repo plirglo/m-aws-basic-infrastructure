@@ -29,6 +29,7 @@ import (
 const (
 	awsTag     = "awsbi-module"
 	moduleName = "awsbi-module"
+	awsRegion  = "eu-central-1"
 	sshKeyName = "vms_rsa"
 )
 
@@ -261,7 +262,7 @@ func cleanupDiskTestStructure() {
 
 func cleanupAWSResources() {
 
-	session, err := session.NewSession(&aws.Config{Region: aws.String("eu-central-1")})
+	session, err := session.NewSession(&aws.Config{Region: aws.String(awsRegion)})
 	if err != nil {
 		log.Fatal("Cannot get session.")
 	}
