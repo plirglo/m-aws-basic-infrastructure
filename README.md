@@ -146,3 +146,4 @@ and after that run shell command:
 | Terraform AWS provider    | 3.7.0   | https://github.com/terraform-providers/terraform-provider-aws | [Mozilla Public License 2.0](https://github.com/terraform-providers/terraform-provider-aws/blob/master/LICENSE) |
 | Make                      | 4.3     | https://www.gnu.org/software/make/                    | [GNU General Public License](https://www.gnu.org/licenses/gpl-3.0.html) |
 | yq                        | 3.3.4   | https://github.com/mikefarah/yq/                      | [MIT License](https://github.com/mikefarah/yq/blob/master/LICENSE) |
+| aws-sdk-go                | 1.15.77 | https://github.com/aws/aws-sdk-go/                    | [Apache License 2.0](https://github.com/aws/aws-sdk-go/blob/master/LICENSE.txt) | 
