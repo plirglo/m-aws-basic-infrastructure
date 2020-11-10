@@ -134,9 +134,10 @@ func TestOnApplyShouldCreateEnvironment(t *testing.T) {
 		t.Error("Expected to find expression matching:\n", expectedOutputRegexp, "\nbut found:\n", outStr)
 	}
 
+	checkNumberOfVms(t)
 }
 
-func TestShouldCheckNumberOfVms(t *testing.T) {
+func checkNumberOfVms(t *testing.T) {
 	// given
 	instancesNumber := 1
 
