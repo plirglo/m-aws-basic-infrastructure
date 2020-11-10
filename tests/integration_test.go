@@ -137,6 +137,7 @@ func TestOnApplyShouldCreateEnvironment(t *testing.T) {
 	checkNumberOfVms(t)
 }
 
+// checks if the proper number of ec2s has been created
 func checkNumberOfVms(t *testing.T) {
 	// given
 	instancesNumber := 1
@@ -222,6 +223,7 @@ func TestOnDestroyShouldDestroyEnvironment(t *testing.T) {
 	}
 }
 
+// initializes test with creation of key pair and checks if variables need to run tests are setup
 func setup() {
 	log.Println("Initialize test")
 	awsAccessKey = os.Getenv("AWS_ACCESS_KEY_ID")
@@ -252,6 +254,7 @@ func setup() {
 	}
 }
 
+// cleans up artifacts from test build from disk
 func cleanupDiskTestStructure() {
 	log.Println("Starting cleanup.")
 	err := os.RemoveAll(sharedAbsoluteFilePath)
@@ -261,6 +264,7 @@ func cleanupDiskTestStructure() {
 	log.Println("Cleanup finished.")
 }
 
+// cleans up AWS resources if module couldn't clean up resources properly during the test
 func cleanupAWSResources() {
 
 	newSession, errSession := session.NewSession(&aws.Config{Region: aws.String(awsRegion)})
@@ -338,6 +342,7 @@ func cleanupAWSResources() {
 
 }
 
+// run docker with image tag and mounts storage from mountDir with imageTag and other parameters
 func runDocker(t *testing.T, params ...string) (bytes.Buffer, bytes.Buffer) {
 	var stdout, stderr bytes.Buffer
 
@@ -358,6 +363,8 @@ func runDocker(t *testing.T, params ...string) (bytes.Buffer, bytes.Buffer) {
 	return stdout, stderr
 }
 
+// generateRsaKeyPair function generates RSA public and private keys and returns
+// error if the operation was unsuccessful.
 func generateRsaKeyPair(directory, name string) error {
 	privateRsaKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
@@ -379,6 +386,7 @@ func generateRsaKeyPair(directory, name string) error {
 	return ioutil.WriteFile(path.Join(directory, name+".pub"), publicKeyBytes, 0644)
 }
 
+// removes ec2s using AWS session based on resource identifiers that belong to resource group
 func removeEc2s(session *session.Session, ec2sToRemove []*resourcegroups.ResourceIdentifier) {
 
 	ec2Client := ec2.New(session)
@@ -420,6 +428,7 @@ func removeEc2s(session *session.Session, ec2sToRemove []*resourcegroups.Resourc
 
 }
 
+// removes route tables using AWS session based on resource identifiers that belong to resource group
 func removeRouteTables(session *session.Session, rtsToRemove []*resourcegroups.ResourceIdentifier) {
 
 	ec2Client := ec2.New(session)
@@ -443,6 +452,7 @@ func removeRouteTables(session *session.Session, rtsToRemove []*resourcegroups.R
 
 }
 
+// removes security groups using AWS session based on resource identifiers that belong to resource group
 func removeSecurityGroup(session *session.Session, sgsToRemove []*resourcegroups.ResourceIdentifier) {
 
 	ec2Client := ec2.New(session)
@@ -463,6 +473,7 @@ func removeSecurityGroup(session *session.Session, sgsToRemove []*resourcegroups
 
 }
 
+// removes internet gateways using AWS session based on resource identifiers that belong to resource group
 func removeInternetGateway(session *session.Session, igsToRemove []*resourcegroups.ResourceIdentifier) {
 
 	ec2Client := ec2.New(session)
@@ -506,6 +517,7 @@ func removeInternetGateway(session *session.Session, igsToRemove []*resourcegrou
 	}
 }
 
+// removes natgateways using AWS session based on resource identifiers that belong to resource group
 func removeNatGateway(session *session.Session, ngsToRemove []*resourcegroups.ResourceIdentifier) {
 
 	ec2Client := ec2.New(session)
@@ -559,6 +571,7 @@ func removeNatGateway(session *session.Session, ngsToRemove []*resourcegroups.Re
 
 }
 
+// removes subnets using AWS session based on resource identifiers that belong to resource group
 func removeSubnet(session *session.Session, subnetsToRemove []*resourcegroups.ResourceIdentifier) {
 
 	ec2Client := ec2.New(session)
@@ -580,6 +593,7 @@ func removeSubnet(session *session.Session, subnetsToRemove []*resourcegroups.Re
 
 }
 
+// removes vpcs using AWS session based on resource identifiers that belong to resource group
 func removeVpc(session *session.Session, vpcsToRemove []*resourcegroups.ResourceIdentifier) {
 
 	ec2Client := ec2.New(session)
@@ -600,6 +614,7 @@ func removeVpc(session *session.Session, vpcsToRemove []*resourcegroups.Resource
 	}
 }
 
+// removes key pairs using AWS session based on resource identifiers that belong to resource group
 func removeKeyPair(session *session.Session, kpName string) {
 
 	ec2Client := ec2.New(session)
@@ -615,6 +630,7 @@ func removeKeyPair(session *session.Session, kpName string) {
 	log.Println("Key Pair: Deleting key pair: ", output)
 }
 
+// removes ec2s using AWS session based on resource identifiers that belong to resource group
 func releaseAddresses(session *session.Session, eipName string) {
 
 	ec2Client := ec2.New(session)
@@ -664,6 +680,7 @@ func releaseAddresses(session *session.Session, eipName string) {
 
 }
 
+// removes resource groups using AWS session based on name
 func removeResourceGroup(session *session.Session, rgToRemoveName string) {
 
 	rgClient := resourcegroups.New(session)
@@ -690,6 +707,7 @@ func removeResourceGroup(session *session.Session, rgToRemoveName string) {
 
 }
 
+// checks if the tag is present in tag list
 func checkIfTagPresent(toFind string, tags []*ec2.Tag) bool {
 
 	for _, tag := range tags {
