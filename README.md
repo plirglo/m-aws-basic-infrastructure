@@ -125,6 +125,19 @@ The output from this module is:
 * vpc_id
 * private_route_table_id
 
+## Integration tests execution
+
+Prior to run integration tests on for AWS module specify variables on OS where you want to run tests:
+- AWS_ACCESS_KEY_ID - this is your access key
+- AWS_SECRET_ACCESS_KEY - this is your secret
+- AWSBI_IMAGE_TAG - this is full tag of docker image that you want to test e.g. "epiphanyplatform/awsbi:0.0.1"
+
+and after that run shell command:
+
+```shell
+  make test
+```
+
 ## Module dependencies
 
 | Component                 | Version | Repo/Website                                          | License                                                           |
@@ -133,3 +146,4 @@ The output from this module is:
 | Terraform AWS provider    | 3.7.0   | https://github.com/terraform-providers/terraform-provider-aws | [Mozilla Public License 2.0](https://github.com/terraform-providers/terraform-provider-aws/blob/master/LICENSE) |
 | Make                      | 4.3     | https://www.gnu.org/software/make/                    | [GNU General Public License](https://www.gnu.org/licenses/gpl-3.0.html) |
 | yq                        | 3.3.4   | https://github.com/mikefarah/yq/                      | [MIT License](https://github.com/mikefarah/yq/blob/master/LICENSE) |
+| aws-sdk-go                | 1.15.77 | https://github.com/aws/aws-sdk-go/                    | [Apache License 2.0](https://github.com/aws/aws-sdk-go/blob/master/LICENSE.txt) | 

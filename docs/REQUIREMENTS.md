@@ -29,4 +29,6 @@ In WSL1 you can achieve the same with [this](https://nickjanetakis.com/blog/sett
 
 ## Execute module tests
 
-At the moment this module does not have any tests.
+* Make
+* Docker
+* Golang >1.14
