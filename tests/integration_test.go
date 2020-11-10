@@ -284,8 +284,10 @@ func cleanupAWSResources() {
 			if aerr.Code() == "NotFoundException" {
 				log.Println("Resource group: ", rgName, " not found.")
 			} else {
-				log.Fatal("Cannot get list of resources: ", errResourcesList)
+				log.Fatal("Resource group: Cannot get list of resources: ", errResourcesList)
 			}
+		} else {
+			log.Fatal("Resource group: Three was an error: ", errResourcesList.Error())
 		}
 	}
 
@@ -518,13 +520,14 @@ func removeNatGateway(session *session.Session, ngsToRemove []*resourcegroups.Re
 
 		outDesc, errDesc := ec2Client.DescribeNatGateways(descInp)
 		if errDesc != nil {
-
 			if aerr, ok := errDesc.(awserr.Error); ok {
 				if aerr.Code() == "NatGatewayNotFound" {
 					log.Println("Nat Gateway: Nat Gateway not found.")
 				} else {
 					log.Fatal("Nat Gateway: Describe error: ", errDesc)
 				}
+			} else {
+				log.Fatal("Nat Gateway: Three was an error: ", errDesc.Error())
 			}
 		}
 		log.Printf("Nat Gateway: Describe output: %s", outDesc)
@@ -546,6 +549,8 @@ func removeNatGateway(session *session.Session, ngsToRemove []*resourcegroups.Re
 					if aerr.Code() != "ResourceNotReady" {
 						log.Fatal("Nat Gateway: Wait error: ", errDesc)
 					}
+				} else {
+					log.Fatal("Nat Gateway: Three was an error: ", errWait.Error())
 				}
 			}
 		}
@@ -645,6 +650,8 @@ func releaseAddresses(session *session.Session, eipName string) {
 							if aerr.Code() != "AuthFailure" && aerr.Code() != "InvalidAllocationID.NotFound" {
 								log.Fatal("EIP: Releasing EIP error: ", err)
 							}
+						} else {
+							log.Fatal("EIP: Three was an error: ", err.Error())
 						}
 					}
 					log.Println("EIP: Releasing EIP. Retry: ", retry)
@@ -673,6 +680,8 @@ func removeResourceGroup(session *session.Session, rgToRemoveName string) {
 			} else {
 				log.Fatal("Resource Group: Deleting resource group error: ", rgDelErr)
 			}
+		} else {
+			log.Fatal("Resource Group: Three was an error: ", rgDelErr.Error())
 		}
 
 	} else {
