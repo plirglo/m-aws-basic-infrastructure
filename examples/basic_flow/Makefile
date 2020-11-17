@@ -4,7 +4,7 @@ AWSBI_IMAGE_NAME := epiphanyplatform/awsbi:0.0.1
 
 -include $(ROOT_DIR)/vars.mk
 
-M_NAME ?= awsbi-basic-flow
+M_NAME ?= basic-flow
 M_VMS_RSA_FILENAME ?= vms_rsa
 
 export
