@@ -120,8 +120,6 @@ resource "aws_nat_gateway" "awsbi_nat_gateway" {
 }
 
 resource "aws_route_table" "awsbi_route_table_private" {
-  count = local.use_nat_gateway ? 1 : 0
-
   vpc_id = aws_vpc.awsbi_vpc.id
 
   dynamic "route" {
