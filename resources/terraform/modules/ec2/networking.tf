@@ -140,5 +140,5 @@ resource "aws_route_table" "awsbi_route_table_private" {
 resource "aws_route_table_association" "awsbi_route_association_private" {
   count          = length(local.private_cidr_blocks)
   subnet_id      = aws_subnet.awsbi_private_subnet[count.index].id
-  route_table_id = aws_route_table.awsbi_route_table_private[0].id
+  route_table_id = aws_route_table.awsbi_route_table_private.id
 }
