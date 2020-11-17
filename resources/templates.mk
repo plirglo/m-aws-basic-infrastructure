@@ -16,7 +16,8 @@ $(M_MODULE_SHORT):
   instance_count: $(M_VMS_COUNT)
   region: $(M_REGION)
   use_public_ip: $(M_PUBLIC_IPS)
-  force_nat_gateway: $(M_NAT_GATEWAY)
+  nat_gateway_count: $(M_NAT_GATEWAY_COUNT)
+  subnets: $(M_SUBNETS)
   rsa_pub_path: "$(M_SHARED)/$(M_VMS_RSA).pub"
   os: $(M_OS)
 endef

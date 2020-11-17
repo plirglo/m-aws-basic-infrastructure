@@ -24,9 +24,21 @@ variable "use_public_ip" {
   type        = bool
 }
 
-variable "force_nat_gateway" {
-  description = "If true, the NAT gateway will be forcefully deployed"
-  type        = bool
+variable "nat_gateway_count" {
+  description = "The number of nat gateways to create"
+  type        = number
+}
+
+variable "subnets" {
+  description = "Subnets configuration"
+  type = object({
+    private = object({
+      count = number
+    })
+    public = object({
+      count = number
+    })
+  })
 }
 
 variable "rsa_pub_path" {
