@@ -23,20 +23,11 @@ variable "root_volume_size" {
 variable "use_public_ip" {
   description = "If true, the EC2 instance will have associated public IP address"
   type        = bool
-#  validation {
-#    condition     = (var.use_public_ip && var.subnets.public.count > 0) || !var.use_public_ip
-#    error_message = "With public IPs usage at least one public subnet should be specified"
-#  }
 }
 
 variable "nat_gateway_count" {
   description = "The number of nat gateways to create"
   type        = number
-#  validation {
-#    condition = ((var.subnets.private.count > 0 && var.nat_gateway_count > 0)
-#                  || (var.subnets.private.count == 0 && var.nat_gateway_count == 0))
-#    error_message = "If there are private networks specified, at least one nat gateway should be created, and vice-versa"
-#  }
 }
 
 variable "region" {
