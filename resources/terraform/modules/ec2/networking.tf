@@ -96,8 +96,7 @@ resource "aws_subnet" "awsbi_private_subnet" {
 
 resource "aws_eip" "awsbi_nat_gateway" {
   count = var.nat_gateway_count
-
-  vpc = true
+  vpc   = true
 
   tags = {
     name         = "${var.name}-eip${count.index}"
@@ -106,10 +105,9 @@ resource "aws_eip" "awsbi_nat_gateway" {
 }
 
 resource "aws_nat_gateway" "awsbi_nat_gateway" {
-  count = var.nat_gateway_count
-
+  count         = var.nat_gateway_count
   allocation_id = aws_eip.awsbi_nat_gateway[count.index].id
-  subnet_id     = aws_subnet.awsbi_public_subnet[count.index].id
+  subnet_id     = element(aws_subnet.awsbi_public_subnet.*.id, count.index)
 
   tags = {
     name         = "${var.name}-ng${count.index}"
@@ -120,19 +118,16 @@ resource "aws_nat_gateway" "awsbi_nat_gateway" {
 }
 
 resource "aws_route_table" "awsbi_route_table_private" {
+  count = var.nat_gateway_count
   vpc_id = aws_vpc.awsbi_vpc.id
 
-  dynamic "route" {
-    for_each = aws_nat_gateway.awsbi_nat_gateway.*.id
-    iterator = nat_gateway_id
-    content {
-      cidr_block     = "0.0.0.0/0"
-      nat_gateway_id = nat_gateway_id.value
-    }
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.awsbi_nat_gateway[count.index].id
   }
 
   tags = {
-    name = "${var.name}-rt-private"
+    name = "${var.name}-rt-private${count.index}"
     cluster_name = var.name
   }
 }
@@ -140,5 +135,5 @@ resource "aws_route_table" "awsbi_route_table_private" {
 resource "aws_route_table_association" "awsbi_route_association_private" {
   count          = length(local.private_cidr_blocks)
   subnet_id      = aws_subnet.awsbi_private_subnet[count.index].id
-  route_table_id = aws_route_table.awsbi_route_table_private.id
+  route_table_id = element(aws_route_table.awsbi_route_table_private.*.id, count.index)
 }

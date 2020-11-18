@@ -4,8 +4,7 @@ resource "aws_key_pair" "kp" {
 }
 
 module "ec2" {
-  source = "./modules/ec2"
-
+  source            = "./modules/ec2"
   name              = var.name
   instance_count    = var.instance_count
   root_volume_size  = var.root_volume_size
@@ -15,4 +14,8 @@ module "ec2" {
   region            = var.region
   key_name          = aws_key_pair.kp.key_name
   os                = var.os
+
+  providers = {
+    aws = aws
+  }
 }
