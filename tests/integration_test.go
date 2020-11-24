@@ -31,12 +31,16 @@ const (
 	moduleName = "awsbi-module"
 	awsRegion  = "eu-central-1"
 	sshKeyName = "vms_rsa"
+	retries    = 30
 )
 
 var (
 	imageTag                  string
 	awsAccessKey              string
 	awsSecretKey              string
+	k8sHostPath               string
+	k8sVolPath                string
+	stateFilePath             = "shared/state.yml"
 	sharedAbsoluteFilePath, _ = filepath.Abs("./shared")
 	mountDir                  = sharedAbsoluteFilePath + ":/shared"
 	dockerExecPath, _         = exec.LookPath("docker")
@@ -56,7 +60,6 @@ func TestMain(m *testing.M) {
 
 func TestOnInitWithDefaultsShouldCreateProperFileAndFolder(t *testing.T) {
 	// given
-	stateFilePath := "shared/state.yml"
 	expectedFileContentRegexp := "kind: state\nawsbi:\n  status: initialized"
 
 	// when
@@ -243,6 +246,15 @@ func setup() {
 		log.Fatalf("expected non-empty AWSBI_IMAGE_TAG environment variable")
 	}
 
+	k8sHostPath  = os.Getenv("K8S_HOST_PATH")
+	k8sVolPath   = os.Getenv("K8S_VOL_PATH")
+
+	if ( len(k8sHostPath) != 0 && len(k8sVolPath) != 0) {
+		sharedAbsoluteFilePath = k8sVolPath
+		mountDir               = k8sHostPath + ":/shared"
+		stateFilePath          = k8sVolPath + "/state.yml"
+	}
+
 	err := os.MkdirAll(sharedAbsoluteFilePath, os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
@@ -257,7 +269,7 @@ func setup() {
 // cleans up artifacts from test build from disk
 func cleanupDiskTestStructure() {
 	log.Println("Starting cleanup.")
-	err := os.RemoveAll(sharedAbsoluteFilePath)
+	err := os.RemoveAll(sharedAbsoluteFilePath + "/*")
 	if err != nil {
 		log.Fatal("Cannot remove data folder. ", err)
 	}
@@ -291,7 +303,7 @@ func cleanupAWSResources() {
 				log.Fatal("Resource group: Cannot get list of resources: ", errResourcesList)
 			}
 		} else {
-			log.Fatal("Resource group: Three was an error: ", errResourcesList.Error())
+			log.Fatal("Resource group: There was an error: ", errResourcesList.Error())
 		}
 	}
 
@@ -326,7 +338,7 @@ func cleanupAWSResources() {
 			removeSecurityGroup(newSession, filtered)
 		case "NatGateway":
 			log.Println("NatGateway.")
-			removeNatGateway(newSession, filtered)
+			removeNatGateways(newSession, filtered)
 		case "Subnet":
 			log.Println("Subnet.")
 			removeSubnet(newSession, filtered)
@@ -356,9 +368,13 @@ func runDocker(t *testing.T, params ...string) (bytes.Buffer, bytes.Buffer) {
 		Stdout: &stdout,
 		Stderr: &stderr,
 	}
+
 	if err := command.Run(); err != nil {
 		t.Fatal("There was an error running command:", err)
 	}
+
+	t.Log("Stdout: ", string(stdout.Bytes()))
+	t.Log("Stderr: ", string(stderr.Bytes()))
 
 	return stdout, stderr
 }
@@ -518,57 +534,115 @@ func removeInternetGateway(session *session.Session, igsToRemove []*resourcegrou
 }
 
 // removes natgateways using AWS session based on resource identifiers that belong to resource group
-func removeNatGateway(session *session.Session, ngsToRemove []*resourcegroups.ResourceIdentifier) {
+func removeNatGateways(session *session.Session, ngsToRemove []*resourcegroups.ResourceIdentifier) {
 
 	ec2Client := ec2.New(session)
 
 	for _, ngToRemove := range ngsToRemove {
 		ngIDToRemove := strings.Split(*ngToRemove.ResourceArn, "/")[1]
 		log.Println("Nat Gateway: ngIdToRemove: ", ngIDToRemove)
+		removeSingleNatGatewayWithRetries(ec2Client, ngIDToRemove)
+	}
 
-		descInp := &ec2.DescribeNatGatewaysInput{
-			NatGatewayIds: []*string{&ngIDToRemove},
+}
+
+// remove single nat gateway based on nat gateway ID using ec2 client
+func removeSingleNatGatewayWithRetries(ec2Client *ec2.EC2, ngIDToRemove string) {
+
+	found := true
+
+	for retry := 0; retry <= retries && found; retry++ {
+
+		found = describeNatGateway(ec2Client, ngIDToRemove)
+
+		if found == false {
+			continue
 		}
 
-		outDesc, errDesc := ec2Client.DescribeNatGateways(descInp)
-		if errDesc != nil {
-			if aerr, ok := errDesc.(awserr.Error); ok {
-				if aerr.Code() == "NatGatewayNotFound" {
-					log.Println("Nat Gateway: Nat Gateway not found.")
-				} else {
-					log.Fatal("Nat Gateway: Describe error: ", errDesc)
-				}
+		found = removeNatGateway(ec2Client, ngIDToRemove)
+
+		if found == false {
+			continue
+		}
+
+		waitForNatGatewayDelete(ec2Client, ngIDToRemove)
+
+		log.Println("Nat Gateway: Deleting NAT Gateway. ", ngIDToRemove, " Retry: ", retry)
+		time.Sleep(5 * time.Second)
+	}
+}
+
+// describe Nat Gateway based on ec2 client and Nat Gateway id, returns false if Nat Gateway not found or deleted
+func describeNatGateway(ec2Client *ec2.EC2, ngIDToDescribe string) bool {
+	descInp := &ec2.DescribeNatGatewaysInput{
+		NatGatewayIds: []*string{&ngIDToDescribe},
+	}
+
+	outDesc, errDesc := ec2Client.DescribeNatGateways(descInp)
+	if errDesc != nil {
+		log.Println(errDesc)
+		if aerr, ok := errDesc.(awserr.Error); ok {
+			if aerr.Code() == "NatGatewayNotFound" {
+				log.Println("Nat Gateway: Nat Gateway not found.")
+				return false
 			} else {
-				log.Fatal("Nat Gateway: Three was an error: ", errDesc.Error())
+				log.Fatal("Nat Gateway: Describe error: ", errDesc)
 			}
+		} else {
+			log.Fatal("Nat Gateway: There was an error: ", errDesc.Error())
 		}
-		log.Printf("Nat Gateway: Describe output: %s", outDesc)
+	}
+	log.Printf("Nat Gateway: Describe output: %s", outDesc)
 
-		if outDesc.NatGateways != nil && *outDesc.NatGateways[0].State != "deleted" {
-			ngInp := &ec2.DeleteNatGatewayInput{
-				NatGatewayId: &ngIDToRemove,
-			}
+	if outDesc.NatGateways == nil || *outDesc.NatGateways[0].State == "deleted" {
+		log.Print("Nat Gateway: Element not found or has been already deleted.")
+		return false
+	}
+	return true
+}
 
-			output, err := ec2Client.DeleteNatGateway(ngInp)
-			if err != nil {
-				log.Fatal("Nat Gateway: Deleting NAT Gateway error: ", err)
-			}
-			log.Println("Nat Gateway: Deleting NAT Gateway: ", output)
+// appropriate Nat Gateway delete method based on ec2 client and Nat Gateway id, returns false if Nat Gateway not found
+func removeNatGateway(ec2Client *ec2.EC2, ngIDToRemove string) bool {
+	ngDelInp := &ec2.DeleteNatGatewayInput{
+		NatGatewayId: &ngIDToRemove,
+	}
 
-			errWait := ec2Client.WaitUntilNatGatewayAvailable(descInp)
-			if errWait != nil {
-				if aerr, ok := errDesc.(awserr.Error); ok {
-					if aerr.Code() != "ResourceNotReady" {
-						log.Fatal("Nat Gateway: Wait error: ", errDesc)
-					}
-				} else {
-					log.Fatal("Nat Gateway: Three was an error: ", errWait.Error())
-				}
+	_, err := ec2Client.DeleteNatGateway(ngDelInp)
+
+	if err != nil {
+		log.Println("Nat Gateway: Error: ", err)
+		if aerr, ok := err.(awserr.Error); ok {
+			if aerr.Code() == "NatGatewayNotFound" {
+				log.Print("Nat Gateway: Element not found.", err)
+				return false
 			}
+			if aerr.Code() != "ResourceNotReady" {
+				log.Fatal("Nat Gateway: Deleting NAT Gateway: ", err)
+			}
+		} else {
+			log.Fatal("Nat Gateway: Deleting NAT Gateway: ", err.Error())
 		}
 
 	}
+	return true
+}
 
+// wait for Nat Gateway to be removed based on ec2 client and Nat Gateway id
+func waitForNatGatewayDelete(ec2Client *ec2.EC2, ngIDToWait string) {
+	descInp := &ec2.DescribeNatGatewaysInput{
+		NatGatewayIds: []*string{&ngIDToWait},
+	}
+
+	errWait := ec2Client.WaitUntilNatGatewayAvailable(descInp)
+	if errWait != nil {
+		if aerr, ok := errWait.(awserr.Error); ok {
+			if aerr.Code() != "ResourceNotReady" {
+				log.Fatal("Nat Gateway: Wait error: ", errWait)
+			}
+		} else {
+			log.Fatal("Nat Gateway: There was an error: ", errWait.Error())
+		}
+	}
 }
 
 // removes subnets using AWS session based on resource identifiers that belong to resource group
@@ -654,7 +728,7 @@ func releaseAddresses(session *session.Session, eipName string) {
 
 				found := true
 
-				for retry := 0; retry <= 30 && found; retry++ {
+				for retry := 0; retry <= retries && found; retry++ {
 					_, err := ec2Client.ReleaseAddress(eipToReleaseInp)
 					if err != nil {
 						if aerr, ok := err.(awserr.Error); ok {
@@ -667,7 +741,7 @@ func releaseAddresses(session *session.Session, eipName string) {
 								log.Fatal("EIP: Releasing EIP error: ", err)
 							}
 						} else {
-							log.Fatal("EIP: Three was an error: ", err.Error())
+							log.Fatal("EIP: There was an error: ", err.Error())
 						}
 					}
 					log.Println("EIP: Releasing EIP. Retry: ", retry)
@@ -698,7 +772,7 @@ func removeResourceGroup(session *session.Session, rgToRemoveName string) {
 				log.Fatal("Resource Group: Deleting resource group error: ", rgDelErr)
 			}
 		} else {
-			log.Fatal("Resource Group: Three was an error: ", rgDelErr.Error())
+			log.Fatal("Resource Group: There was an error: ", rgDelErr.Error())
 		}
 
 	} else {
