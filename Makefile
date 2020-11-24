@@ -27,6 +27,9 @@ release: guard-VERSION guard-IMAGE guard-USER
 		-t $(IMAGE_NAME) \
 		.
 
+print-%:
+	@echo "$($*)"
+
 guard-%:
 	@if [ "${${*}}" = "" ]; then \
 		echo "Environment variable $* not set"; \
@@ -38,5 +41,7 @@ metadata: guard-IMAGE
 		-t $(IMAGE_NAME) \
 		metadata
 
-test: guard-AWS_ACCESS_KEY_ID guard-AWS_SECRET_ACCESS_KEY
+test: build \
+    guard-AWS_ACCESS_KEY_ID guard-AWS_SECRET_ACCESS_KEY guard-AWSBI_IMAGE_TAG
 	@cd $(ROOT_DIR)/tests/ && go test -v -timeout 30m
+
