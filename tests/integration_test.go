@@ -288,7 +288,6 @@ func cleanupAWSResources() {
 
 	rgName := moduleName + "-rg"
 	kpName := moduleName + "-kp"
-	eipName := moduleName + "-eip0"
 
 	rgResourcesList, errResourcesList := rgClient.ListGroupResources(&resourcegroups.ListGroupResourcesInput{
 		GroupName: aws.String(rgName),
@@ -326,7 +325,7 @@ func cleanupAWSResources() {
 			removeEc2s(newSession, filtered)
 		case "EIP":
 			log.Println("Releasing public EIPs.")
-			releaseAddresses(newSession, eipName)
+			releaseAddresses(newSession)
 		case "RouteTable":
 			log.Println("RouteTable.")
 			removeRouteTables(newSession, filtered)
@@ -703,54 +702,56 @@ func removeKeyPair(session *session.Session, kpName string) {
 	log.Println("Key Pair: Deleting key pair: ", output)
 }
 
-// removes ec2s using AWS session based on resource identifiers that belong to resource group
-func releaseAddresses(session *session.Session, eipName string) {
+// releases elastic IPs using AWS session based on resource_group tag
+func releaseAddresses(session *session.Session) {
 
 	ec2Client := ec2.New(session)
 
-	describeEips, err := ec2Client.DescribeAddresses(&ec2.DescribeAddressesInput{})
+	eipDescInp := &ec2.DescribeAddressesInput {
+        Filters: []*ec2.Filter {
+            {
+                Name: aws.String("tag:resource_group"),
+                Values: []*string {
+                    aws.String(awsTag),
+                },
+            },
+        },
+   }
+
+	describeEips, err := ec2Client.DescribeAddresses(eipDescInp)
 	if err != nil {
 		log.Fatal("EIP: Cannot get EIP list.", err)
 	}
 
 	for _, eip := range describeEips.Addresses {
 
-		tagPresent := false
-		if eip.Tags != nil {
-			tagPresent = checkIfTagPresent(eipName, eip.Tags)
-			if tagPresent {
-				log.Printf("EIP: Releasing EIP with AllocationId: %s", *eip.AllocationId)
+		log.Printf("EIP: Releasing EIP with AllocationId: %s", *eip.AllocationId)
 
-				eipToReleaseInp := &ec2.ReleaseAddressInput{
-					AllocationId: eip.AllocationId,
-				}
-
-				found := true
-
-				for retry := 0; retry <= retries && found; retry++ {
-					_, err := ec2Client.ReleaseAddress(eipToReleaseInp)
-					if err != nil {
-						if aerr, ok := err.(awserr.Error); ok {
-							if aerr.Code() == "InvalidAllocationID.NotFound" {
-								log.Print("EIP: Element not found.", err)
-								found = false
-								continue
-							}
-							if aerr.Code() != "AuthFailure" && aerr.Code() != "InvalidAllocationID.NotFound" {
-								log.Fatal("EIP: Releasing EIP error: ", err)
-							}
-						} else {
-							log.Fatal("EIP: There was an error: ", err.Error())
-						}
-					}
-					log.Println("EIP: Releasing EIP. Retry: ", retry)
-					time.Sleep(5 * time.Second)
-				}
-			}
+		eipToReleaseInp := &ec2.ReleaseAddressInput{
+			AllocationId: eip.AllocationId,
 		}
 
+		found := true
+		for retry := 0; retry <= retries && found; retry++ {
+			_, err := ec2Client.ReleaseAddress(eipToReleaseInp)
+			if err != nil {
+				if aerr, ok := err.(awserr.Error); ok {
+					if aerr.Code() == "InvalidAllocationID.NotFound" {
+						log.Print("EIP: Element not found.", err)
+						found = false
+						continue
+					}
+					if aerr.Code() != "AuthFailure" && aerr.Code() != "InvalidAllocationID.NotFound" {
+						log.Fatal("EIP: Releasing EIP error: ", err)
+					}
+				} else {
+					log.Fatal("EIP: There was an error: ", err.Error())
+				}
+			}
+			log.Println("EIP: Releasing EIP. Retry: ", retry)
+			time.Sleep(5 * time.Second)
+		}
 	}
-
 }
 
 // removes resource groups using AWS session based on name
@@ -778,15 +779,4 @@ func removeResourceGroup(session *session.Session, rgToRemoveName string) {
 		log.Println("Resource Group: Deleting resource group: ", rgDelOut)
 	}
 
-}
-
-// checks if the tag is present in tag list
-func checkIfTagPresent(toFind string, tags []*ec2.Tag) bool {
-
-	for _, tag := range tags {
-		if *tag.Value == toFind {
-			return true
-		}
-	}
-	return false
 }
