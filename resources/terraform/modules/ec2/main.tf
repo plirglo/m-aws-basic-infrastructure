@@ -27,7 +27,8 @@ resource "aws_resourcegroups_group" "rg" {
     "AWS::EC2::NatGateway",
     "AWS::EC2::SecurityGroup",
     "AWS::EC2::Instance",
-    "AWS::EC2::RouteTable"
+    "AWS::EC2::RouteTable",
+    "AWS::EC2::EIP"
   ],
   "TagFilters": [
     {

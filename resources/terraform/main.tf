@@ -1,6 +1,9 @@
 resource "aws_key_pair" "kp" {
-  key_name_prefix   = "kp-${var.name}"
+  key_name_prefix   = "${var.name}-kp"
   public_key = file(var.rsa_pub_path)
+  tags = {
+    cluster_name = var.name
+  }
 }
 
 module "ec2" {
