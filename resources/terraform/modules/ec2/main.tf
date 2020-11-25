@@ -32,7 +32,7 @@ resource "aws_resourcegroups_group" "rg" {
   ],
   "TagFilters": [
     {
-      "Key": "cluster_name",
+      "Key": "resource_group",
       "Values": ["${var.name}"]
     }
   ]
@@ -59,6 +59,6 @@ resource "aws_instance" "awsbi" {
 
   tags = {
     name = "${var.name}-instance${count.index}"
-    cluster_name = var.name
+    resource_group = var.name
   }
 }
