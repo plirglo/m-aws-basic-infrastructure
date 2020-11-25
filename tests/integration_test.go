@@ -158,7 +158,7 @@ func checkNumberOfVms(t *testing.T) {
 	ec2DescInp := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
 			{
-				Name: aws.String("tag:Name"),
+				Name: aws.String("tag:cluster_name"),
 				Values: []*string{
 					aws.String(awsTag),
 				},
