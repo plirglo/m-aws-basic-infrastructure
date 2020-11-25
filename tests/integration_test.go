@@ -27,11 +27,12 @@ import (
 )
 
 const (
-	awsTag     = "bi-module"
-	moduleName = "bi-module"
-	awsRegion  = "eu-central-1"
-	sshKeyName = "vms_rsa"
-	retries    = 30
+	awsTagName  = "resource_group"
+	awsTagValue = "bi-module"
+	moduleName  = "bi-module"
+	awsRegion   = "eu-central-1"
+	sshKeyName  = "vms_rsa"
+	retries     = 30
 )
 
 var (
@@ -158,9 +159,9 @@ func checkNumberOfVms(t *testing.T) {
 	ec2DescInp := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
 			{
-				Name: aws.String("tag:resource_group"),
+				Name: aws.String("tag:" + awsTagName),
 				Values: []*string{
-					aws.String(awsTag),
+					aws.String(awsTagValue),
 				},
 			},
 		},
@@ -702,56 +703,56 @@ func removeKeyPair(session *session.Session, kpName string) {
 	log.Println("Key Pair: Deleting key pair: ", output)
 }
 
-// releases elastic IPs using AWS session based on resource_group tag
+// releases elastic IPs using AWS session based on resource tag
 func releaseAddresses(session *session.Session) {
 
-	ec2Client := ec2.New(session)
+    ec2Client := ec2.New(session)
 
-	eipDescInp := &ec2.DescribeAddressesInput {
-        Filters: []*ec2.Filter {
+    eipDescInp := &ec2.DescribeAddressesInput {
+        Filters: []*ec2.Filter{
             {
-                Name: aws.String("tag:resource_group"),
-                Values: []*string {
-                    aws.String(awsTag),
+                Name: aws.String("tag:" + awsTagName),
+                Values: []*string{
+                    aws.String(awsTagValue),
                 },
             },
         },
-   }
+    }
 
-	describeEips, err := ec2Client.DescribeAddresses(eipDescInp)
-	if err != nil {
-		log.Fatal("EIP: Cannot get EIP list.", err)
-	}
+    describeEips, err := ec2Client.DescribeAddresses(eipDescInp)
+    if err != nil {
+        log.Fatal("EIP: Cannot get EIP list.", err)
+    }
 
-	for _, eip := range describeEips.Addresses {
+    for _, eip := range describeEips.Addresses {
 
-		log.Printf("EIP: Releasing EIP with AllocationId: %s", *eip.AllocationId)
+        log.Printf("EIP: Releasing EIP with AllocationId: %s", *eip.AllocationId)
 
-		eipToReleaseInp := &ec2.ReleaseAddressInput{
-			AllocationId: eip.AllocationId,
-		}
+        eipToReleaseInp := &ec2.ReleaseAddressInput{
+            AllocationId: eip.AllocationId,
+        }
 
-		found := true
-		for retry := 0; retry <= retries && found; retry++ {
-			_, err := ec2Client.ReleaseAddress(eipToReleaseInp)
-			if err != nil {
-				if aerr, ok := err.(awserr.Error); ok {
-					if aerr.Code() == "InvalidAllocationID.NotFound" {
-						log.Print("EIP: Element not found.", err)
-						found = false
-						continue
-					}
-					if aerr.Code() != "AuthFailure" && aerr.Code() != "InvalidAllocationID.NotFound" {
-						log.Fatal("EIP: Releasing EIP error: ", err)
-					}
-				} else {
-					log.Fatal("EIP: There was an error: ", err.Error())
-				}
-			}
-			log.Println("EIP: Releasing EIP. Retry: ", retry)
-			time.Sleep(5 * time.Second)
-		}
-	}
+        found := true
+        for retry := 0; retry <= retries && found; retry++ {
+            _, err := ec2Client.ReleaseAddress(eipToReleaseInp)
+            if err != nil {
+                if aerr, ok := err.(awserr.Error); ok {
+                    if aerr.Code() == "InvalidAllocationID.NotFound" {
+                        log.Print("EIP: Element not found.", err)
+                        found = false
+                        continue
+                    }
+                    if aerr.Code() != "AuthFailure" && aerr.Code() != "InvalidAllocationID.NotFound" {
+                        log.Fatal("EIP: Releasing EIP error: ", err)
+                    }
+                } else {
+                    log.Fatal("EIP: There was an error: ", err.Error())
+                }
+            }
+            log.Println("EIP: Releasing EIP. Retry: ", retry)
+            time.Sleep(5 * time.Second)
+        }
+    }
 }
 
 // removes resource groups using AWS session based on name
