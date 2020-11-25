@@ -27,8 +27,8 @@ import (
 )
 
 const (
-	awsTag     = "awsbi-module"
-	moduleName = "awsbi-module"
+	awsTag     = "bi-module"
+	moduleName = "bi-module"
 	awsRegion  = "eu-central-1"
 	sshKeyName = "vms_rsa"
 	retries    = 30
@@ -286,9 +286,9 @@ func cleanupAWSResources() {
 
 	rgClient := resourcegroups.New(newSession)
 
-	rgName := "rg-" + moduleName
-	kpName := "kp-" + moduleName
-	eipName := "eip-" + moduleName
+	rgName := moduleName + "-rg"
+	kpName := moduleName + "-kp"
+	eipName := moduleName + "-eip0"
 
 	rgResourcesList, errResourcesList := rgClient.ListGroupResources(&resourcegroups.ListGroupResourcesInput{
 		GroupName: aws.String(rgName),
@@ -370,11 +370,10 @@ func runDocker(t *testing.T, params ...string) (bytes.Buffer, bytes.Buffer) {
 	}
 
 	if err := command.Run(); err != nil {
-		t.Fatal("There was an error running command:", err)
+	    t.Log("Stdout: ", string(stdout.Bytes()))
+	    t.Log("Stderr: ", string(stderr.Bytes()))
+	    t.Fatal("There was an error running command:", err)
 	}
-
-	t.Log("Stdout: ", string(stdout.Bytes()))
-	t.Log("Stderr: ", string(stderr.Bytes()))
 
 	return stdout, stderr
 }
@@ -533,7 +532,7 @@ func removeInternetGateway(session *session.Session, igsToRemove []*resourcegrou
 	}
 }
 
-// removes natgateways using AWS session based on resource identifiers that belong to resource group
+// removes nat gateways using AWS session based on resource identifiers that belong to resource group
 func removeNatGateways(session *session.Session, ngsToRemove []*resourcegroups.ResourceIdentifier) {
 
 	ec2Client := ec2.New(session)
