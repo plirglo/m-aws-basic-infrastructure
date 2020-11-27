@@ -46,7 +46,7 @@ ensure-state-file: $(M_SHARED)/$(M_STATE_FILE_NAME)
 template-config-file:
 	#AWSBI | template-config-file | will template config file (and backup previous if exists)
 	@if test -f $(M_SHARED)/$(M_MODULE_SHORT)/$(M_CONFIG_NAME); then mv $(M_SHARED)/$(M_MODULE_SHORT)/$(M_CONFIG_NAME) $(M_SHARED)/$(M_MODULE_SHORT)/$(M_CONFIG_NAME).backup ; fi
-	@echo "$$M_CONFIG_CONTENT" > $(M_SHARED)/$(M_MODULE_SHORT)/$(M_CONFIG_NAME)
+	@echo "$$M_CONFIG_CONTENT" | yq r --unwrapScalar -p pv -P - '*' > $(M_SHARED)/$(M_MODULE_SHORT)/$(M_CONFIG_NAME)
 
 initialize-state-file:
 	#AWSBI | initialize-state-file | will initialize state file

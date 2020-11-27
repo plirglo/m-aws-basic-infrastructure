@@ -25,9 +25,9 @@ variable "use_public_ip" {
   type        = bool
 }
 
-variable "force_nat_gateway" {
-  description = "If true, the NAT gateway will be forcefully deployed"
-  type        = bool
+variable "nat_gateway_count" {
+  description = "The number of nat gateways to create"
+  type        = number
 }
 
 variable "region" {
@@ -45,14 +45,20 @@ variable "vpc_cidr_block" {
   default     = "10.1.0.0/20"
 }
 
-variable "subnet_private_cidr_block" {
-  description = "The cidr block of the private subnet"
-  default     = "10.1.1.0/24"
-}
-
-variable "subnet_public_cidr_block" {
-  description = "The cidr block of the public subnet"
-  default     = "10.1.2.0/24"
+variable "subnets" {
+  description = "Subnets configuration"
+  type = object({
+    private = object({
+      count = number
+    })
+    public = object({
+      count = number
+    })
+  })
+  validation {
+    condition     = (var.subnets.private.count > 0 && var.subnets.public.count > 0) || var.subnets.public.count > 0
+    error_message = "At least one subnet should be created."
+  }
 }
 
 variable "os" {
