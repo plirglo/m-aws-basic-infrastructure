@@ -56,7 +56,7 @@ variable "subnets" {
     })
   })
   validation {
-    condition     = var.subnets.private.count > 0 || var.subnets.public.count > 0
+    condition     = (var.subnets.private.count > 0 && var.subnets.public.count > 0) || var.subnets.public.count > 0
     error_message = "At least one subnet should be created."
   }
 }
