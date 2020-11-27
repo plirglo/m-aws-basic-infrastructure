@@ -31,7 +31,7 @@ to be created. Attached into subnets with round-robin
 }
 ----
 |no |init |Defines number of public and private subnets
-that a created in available AZs with round-robin
+that are created in available AZs with round-robin
 
 |M_NAME |string |epiphany |no |init |Name to be used on all resources
 as a prefix
