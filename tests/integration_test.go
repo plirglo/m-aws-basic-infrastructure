@@ -270,9 +270,15 @@ func setup() {
 // cleans up artifacts from test build from disk
 func cleanupDiskTestStructure() {
 	log.Println("Starting cleanup.")
-	err := os.RemoveAll(sharedAbsoluteFilePath + "/*")
+	files, err := filepath.Glob(filepath.Join(sharedAbsoluteFilePath, "*"))
 	if err != nil {
-		log.Fatal("Cannot remove data folder. ", err)
+		log.Fatal(err)
+	}
+	for _, file := range files {
+		err = os.RemoveAll(file)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	log.Println("Cleanup finished.")
 }
