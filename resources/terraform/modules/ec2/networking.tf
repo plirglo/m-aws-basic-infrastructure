@@ -9,7 +9,7 @@ resource "aws_vpc" "awsbi_vpc" {
   enable_dns_hostnames  = "true"
 
   tags = {
-    name           = "${var.name}-vpc"
+    Name           = "${var.name}-vpc"
     resource_group = var.name
   }
 }
@@ -46,7 +46,7 @@ resource "aws_subnet" "awsbi_public_subnet" {
   availability_zone = element(data.aws_availability_zones.available.names, count.index)
 
   tags = {
-    name           = "${var.name}-subnet-public${count.index}"
+    Name           = "${var.name}-subnet-public${count.index}"
     resource_group = var.name
   }
 }
@@ -55,7 +55,7 @@ resource "aws_internet_gateway" "awsbi_internet_gateway" {
   vpc_id = aws_vpc.awsbi_vpc.id
 
   tags = {
-    name           = "${var.name}-ig"
+    Name           = "${var.name}-ig"
     resource_group = var.name
   }
 }
@@ -69,7 +69,7 @@ resource "aws_route_table" "awsbi_route_table_public" {
   }
 
   tags = {
-    name           = "${var.name}-rt-public"
+    Name           = "${var.name}-rt-public"
     resource_group = var.name
   }
 }
@@ -89,7 +89,7 @@ resource "aws_subnet" "awsbi_private_subnet" {
   availability_zone = element(data.aws_availability_zones.available.names, count.index)
 
   tags = {
-    name           = "${var.name}-subnet-private${count.index}"
+    Name           = "${var.name}-subnet-private${count.index}"
     resource_group = var.name
   }
 }
@@ -99,7 +99,7 @@ resource "aws_eip" "awsbi_nat_gateway" {
   vpc   = true
 
   tags = {
-    name           = "${var.name}-eip${count.index}"
+    Name           = "${var.name}-eip${count.index}"
     resource_group = var.name
   }
 }
@@ -110,7 +110,7 @@ resource "aws_nat_gateway" "awsbi_nat_gateway" {
   subnet_id     = element(aws_subnet.awsbi_public_subnet.*.id, count.index)
 
   tags = {
-    name           = "${var.name}-ng${count.index}"
+    Name           = "${var.name}-ng${count.index}"
     resource_group = var.name
   }
 
@@ -127,7 +127,7 @@ resource "aws_route_table" "awsbi_route_table_private" {
   }
 
   tags = {
-    name           = "${var.name}-rt-private${count.index}"
+    Name           = "${var.name}-rt-private${count.index}"
     resource_group = var.name
   }
 }
