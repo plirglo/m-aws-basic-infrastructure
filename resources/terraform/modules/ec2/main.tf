@@ -58,7 +58,7 @@ resource "aws_instance" "awsbi" {
   ]
 
   tags = {
-    name = "${var.name}-instance${count.index}"
+    Name = "${var.name}-instance${count.index}"
     resource_group = var.name
   }
 }
