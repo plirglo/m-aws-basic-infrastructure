@@ -1,9 +1,17 @@
-output "private_ip" {
-  value = module.ec2.private_ip
+output "private_ip_lin" {
+  value = module.ec2.private_ip_lin
 }
 
-output "public_ip" {
-  value = module.ec2.public_ip
+output "public_ip_lin" {
+  value = module.ec2.public_ip_lin
+}
+
+output "private_ip_win" {
+  value = module.ec2.private_ip_win
+}
+
+output "public_ip_win" {
+  value = module.ec2.public_ip_win
 }
 
 output "vpc_id" {

@@ -17,6 +17,8 @@ M_REGION ?= eu-central-1
 M_NAME ?= epiphany
 M_VMS_RSA ?= vms_rsa
 M_OS ?= redhat
+M_WIN_AMI ?= ami-0c51aabac3acf27fe
+M_WIN_COUNT ?= 0
 
 AWS_ACCESS_KEY_ID ?= unset
 AWS_SECRET_ACCESS_KEY ?= unset

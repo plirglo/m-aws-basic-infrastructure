@@ -20,6 +20,8 @@ $(M_MODULE_SHORT):
   subnets: $(M_SUBNETS)
   rsa_pub_path: "$(M_SHARED)/$(M_VMS_RSA).pub"
   os: $(M_OS)
+  windows_instance_ami: $(M_WIN_AMI)
+  windows_instance_count: $(M_WIN_COUNT)
 endef
 
 define M_STATE_INITIAL

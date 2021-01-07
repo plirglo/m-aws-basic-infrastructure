@@ -25,6 +25,13 @@ resource "aws_security_group" "awsbi_security_group" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    protocol    = "tcp"
+    from_port   = 3389
+    to_port     = 3389
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0

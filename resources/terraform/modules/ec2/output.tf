@@ -1,9 +1,17 @@
-output "private_ip" {
-  value = aws_instance.awsbi.*.private_ip
+output "private_ip_lin" {
+  value = aws_instance.awsbi-lin.*.private_ip
 }
 
-output "public_ip" {
-  value = aws_instance.awsbi.*.public_ip
+output "public_ip_lin" {
+  value = aws_instance.awsbi-lin.*.public_ip
+}
+
+output "private_ip_win" {
+  value = aws_instance.awsbi-win.*.private_ip
+}
+
+output "public_ip_win" {
+  value = aws_instance.awsbi-win.*.public_ip
 }
 
 output "vpc_id" {

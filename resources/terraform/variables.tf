@@ -4,7 +4,7 @@ variable "name" {
 }
 
 variable "instance_count" {
-  description = "Number of instances to launch"
+  description = "Number of Linux instances to launch"
   type        = number
 }
 
@@ -48,4 +48,14 @@ variable "rsa_pub_path" {
 variable "os" {
   description = "Operating System to launch"
   type = string
+}
+
+variable "windows_instance_ami" {
+  description = "Operating System to launch on Windows nodes"
+  type = string
+}
+
+variable "windows_instance_count" {
+  description = "Number of Windows instances to launch"
+  type        = number
 }

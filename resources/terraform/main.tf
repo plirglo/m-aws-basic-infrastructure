@@ -17,6 +17,9 @@ module "ec2" {
   region            = var.region
   key_name          = aws_key_pair.kp.key_name
   os                = var.os
+  
+  windows_instance_ami   = var.windows_instance_ami
+  windows_instance_count = var.windows_instance_count
 
   providers = {
     aws = aws

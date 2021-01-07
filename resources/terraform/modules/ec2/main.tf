@@ -41,9 +41,31 @@ JSON
   }
 }
 
-resource "aws_instance" "awsbi" {
+resource "aws_instance" "awsbi-lin" {
   count                       = var.instance_count
   ami                         = data.aws_ami.select.id
+  instance_type               = var.instance_type
+  subnet_id                   = var.use_public_ip ? element(aws_subnet.awsbi_public_subnet.*.id, count.index) : element(aws_subnet.awsbi_private_subnet.*.id, count.index)
+  associate_public_ip_address = var.use_public_ip
+  key_name                    = var.key_name
+
+  root_block_device {
+    volume_size = var.root_volume_size
+  }
+
+  vpc_security_group_ids = [
+    aws_security_group.awsbi_security_group.id
+  ]
+
+  tags = {
+    Name = "${var.name}-instance${count.index}"
+    resource_group = var.name
+  }
+}
+
+resource "aws_instance" "awsbi-win" {
+  count                       = var.windows_instance_count
+  ami                         = var.windows_instance_ami
   instance_type               = var.instance_type
   subnet_id                   = var.use_public_ip ? element(aws_subnet.awsbi_public_subnet.*.id, count.index) : element(aws_subnet.awsbi_private_subnet.*.id, count.index)
   associate_public_ip_address = var.use_public_ip
