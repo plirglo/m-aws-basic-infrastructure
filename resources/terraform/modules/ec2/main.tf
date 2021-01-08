@@ -54,7 +54,7 @@ resource "aws_instance" "awsbi-lin" {
   }
 
   vpc_security_group_ids = [
-    aws_security_group.awsbi_security_group.id
+    aws_security_group.awsbi_security_group_lin.id
   ]
 
   tags = {
@@ -76,7 +76,7 @@ resource "aws_instance" "awsbi-win" {
   }
 
   vpc_security_group_ids = [
-    aws_security_group.awsbi_security_group.id
+    aws_security_group.awsbi_security_group_win.id
   ]
 
   tags = {

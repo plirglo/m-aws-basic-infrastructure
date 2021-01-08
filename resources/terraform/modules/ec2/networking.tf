@@ -14,7 +14,7 @@ resource "aws_vpc" "awsbi_vpc" {
   }
 }
 
-resource "aws_security_group" "awsbi_security_group" {
+resource "aws_security_group" "awsbi_security_group_lin" {
   name    = "${var.name}-sg"
   vpc_id  = aws_vpc.awsbi_vpc.id
 
@@ -24,6 +24,22 @@ resource "aws_security_group" "awsbi_security_group" {
     to_port     = 22
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    resource_group = var.name
+  }
+}
+
+resource "aws_security_group" "awsbi_security_group_win" {
+  name    = "${var.name}-sg"
+  vpc_id  = aws_vpc.awsbi_vpc.id
 
   ingress {
     protocol    = "tcp"
