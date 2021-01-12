@@ -15,7 +15,7 @@ resource "aws_vpc" "awsbi_vpc" {
 }
 
 resource "aws_security_group" "awsbi_security_group_lin" {
-  name    = "${var.name}-sg"
+  name    = "${var.name}-lin-sg"
   vpc_id  = aws_vpc.awsbi_vpc.id
 
   ingress {
@@ -38,7 +38,7 @@ resource "aws_security_group" "awsbi_security_group_lin" {
 }
 
 resource "aws_security_group" "awsbi_security_group_win" {
-  name    = "${var.name}-sg"
+  name    = "${var.name}-win-sg"
   vpc_id  = aws_vpc.awsbi_vpc.id
 
   ingress {
